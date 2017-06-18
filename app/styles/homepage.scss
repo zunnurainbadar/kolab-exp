@@ -1,0 +1,70 @@
+        .typewriteColor {
+            // color: #57EFA5;
+            color: #00E676;
+        }
+        
+        .typed-cursor {
+            opacity: 1;
+            -webkit-animation: blink 0.7s infinite;
+            -moz-animation: blink 0.7s infinite;
+            animation: blink 0.7s infinite;
+        }
+        
+        .firstPage {
+            text-align: center;
+            margin-top: 15%;
+        }
+        
+        .secondPage {
+            text-align: center;
+            margin-top: 6%;
+            // background-color: #D0E9EA;
+        }
+        
+        .thirdPage {
+            text-align: center;
+            margin-top: 5%;
+                        // background-color: #EDF8F5;
+
+        }
+        
+        .fourthPage {
+            text-align: center;
+            margin-top: 5%;
+        }
+        
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        
+        @-webkit-keyframes blink {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        
+        @-moz-keyframes blink {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }

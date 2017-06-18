@@ -2,29 +2,97 @@ import React from 'react';
 import RaisedButton from 'material-ui/RaisedButton';
 var Infinite = require('react-infinite');
 import Toolbar from 'Toolbar';
-import App from "app/components/App.jsx";
 import { Scrollbars } from 'react-custom-scrollbars';
+import Avatar from 'material-ui/Avatar';
+import FloatingActionButton from 'material-ui/FloatingActionButton';
+import ContentAdd from 'material-ui/svg-icons/content/add';
 import Chatbar from 'app/components/toolbars/chattoolbar.jsx';
 //import ReactScrollbar from 'react-scrollbar-js';
+import ChatStore from 'app/store/ChatStore.js'
+import { observer } from "mobx-react";
+import IconButton from 'material-ui/IconButton';
+import UserStore from "app/store/UserStore.js";
+import Store from "app/store/UIstore.js";
+import {map} from 'mobx';
 
+var socket;
+var today;
 const style = {
   margin: 12,
+};
+const displayinline = {
+  display: "flex",
+  backgroundColor: "#00E676",
+};
+const chatinputbox = {
+  height: "3.5rem",
+  margin: "0 0 0rem"
+};
+
+const inputBoxStyle = 
+{
+width: '100%',
+};
+
+const fixedPosition =
+{
+  margin: 12,
+    // marginRight: 20,
+//  width: '100%',
+ position: 'fixed',
+    bottom: '5px',
+    right: '660px',
 };
 
 const heightchat
 ={
 height: '100%',
+backgroundColor: '#EDF8F5',
+}
+@observer
+export default class Chat extends React.Component {   
+ constructor(props) {
+    super(props);
+     this.sendMsg = this.sendMsg.bind(this);
+    //  this.getMsgs = this.getMsgs.bind(this);
+       socket =io.connect();
+          // socket = io.connect('http://localhost:3000');
+    this.state = {
+    };
+      }
+ componentWillMount() {
+      // console.log('This is your name '+ UserStore.userrealname)
+ }
+sendMsg (){
+        socket.emit('add user',UserStore);
+        console.log('Send button is pressed');
+        console.log('This is the text '+this.refs.newText.value);
+		 		socket.emit('send message', this.refs.newText.value);
+        this.refs.newText.value = "";
+
+        socket.on('new message', function(data){
+          var d = new Date();
+    var n = d.getTime();
+          console.log('This is the username of '+ data.username + "and this is message "+ data.msg + "and this is picture "+ data.pic)
+          // var list = document.getElementById("msgList");
+          console.log('THis is my socket.id '+socket.id);
+          // if(data.id == socket.io){
+            var d = new Date();
+          $("#msgList").append('<li class="other"><div class="avatar"><img src='+data.pic+' draggable="false"/></div><div class="msg"><p>'+data.msg+'</p><time>'+d.getHours()+':'+d.getMinutes()+'</time><sender>'+data.username+'</sender></div></li>');
+        // }
+        // else {
+        //   $("#msgList").append('<li class="self"><div class="msg"><p> '+data.msg+' </p><time>20:18</time></div></li>');
+        // }
+          // list.append('<div class="well"><strong>'+data.username+'</strong>:'+data.msg+'</div>')
+        })
 }
 
-export default class Chat extends React.Component {   
-
   render() {
-    const styling = 
-    {
-width: '10px',
-	backgroundColor: '#FFF',
-    };
-    
+console.log('This is data in store chat '+ ChatStore.msgs);
+var users = ChatStore.msgs;
+ const liststatus = UserStore.listy;
+// const numbers = [1, 2, 3, 4, 5];
+console.log('THis is users  '+ users);
  const myScrollbar = {
       width: 400,
       height: 400,
@@ -37,7 +105,6 @@ position: 'fixed',
 
 };
 
-
     return (
 
       <div className="" style={heightchat}>
@@ -46,139 +113,62 @@ position: 'fixed',
       <Scrollbars style={{ height: '100%' }} autoHeightMin={0}
         autoHeightMax={500}
         thumbMinSize={30}>
-
-     <div className="panel">
-       <App />
-                {/*<h4>Content goes here...</h4>
-                <ul>
-                    <li>1</li>
-            
-                </ul>*/}
-
-
-                {/*<div className="menu">
-            <div className="back"><i className="fa fa-chevron-left"></i> <img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
-            <div className="name">Alex</div>
-            <div className="last">18:09</div>
-        </div>*/}
-    {/*<ol className="chat">
-    <li className="other">
-        <div className="avatar"><img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
+           <div>
+users.map(Users => {
+     <div className="panel" key={Users}>
+    <ol className="chat" id ="msgList">
+    <li className="other" >
+        <div className="avatar">
+          
+        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
+          </div>
+      
+      
       <div className="msg">
-        <p>Hola!</p>
-        <p>Te vienes a cenar al centro? <emoji className="pizza"/></p>
+        <p>Users.message</p>
         <time>20:17</time>
+        <sender>Usama</sender>
       </div>
-    </li>
-    <li className="self">
-        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Puff...</p>
-        <p>Aún estoy haciendo el contexto de Góngora... <emoji className="books"/></p>
-        <p>Mejor otro día asd asj asd d asd asd asd asd asd asd asd asd asd</p>
-        <time>20:18</time>
-      </div>
-    </li>
-    <li className="other">
-        <div className="avatar"><img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Qué contexto de Góngora? <emoji className="suffocated"/></p>
-        <time>20:18</time>
-      </div>
-    </li>
-    <li className="self">
-        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
-      <div className="msg">
-        <p>El que mandó Marialu</p>
-        <p>Es para mañana...</p>
-        <time>20:18</time>
-      </div>
-    </li>
-    <li className="other">
-        <div className="avatar"><img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
-      <div className="msg">
-        <p><emoji className="scream"/></p>
-        <p>Pásamelo! <emoji className="please"/></p>
-        <time>20:18</time>
-      </div>
-    </li>
-    <li className="self">
-        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
-      <div className="msg">
-        <img src="http://i.imgur.com/QAROObc.jpg" draggable="false"/>
-        <time>20:19</time>
-      </div>
-    </li>
-    <li className="other">
-        <div className="avatar"><img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Gracias! <emoji className="hearth_blue"/></p>
-        <time>20:20</time>
-      </div>
-    </li>
-        <div className="day">Hoy</div>
-    <li className="self">
-        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Te apetece jugar a Minecraft? asdkahsdkjashdjasdhkajsdhakjsdhkajsdh asdkjhasd asdjha sdkj askdjh asd</p>
-        <time>18:03</time>
-      </div>
-    </li>
-    <li className="other">
-        <div className="avatar"><img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Venga va, hace ya mucho que no juego...</p>
-        <time>18:07</time>
-      </div>
-    </li>
-    <li className="self">
-        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Ehh, me crashea el Launcher... <emoji className="cryalot"/></p>
-        <time>18:08</time>
-      </div>
-    </li>
-    <li className="other">
-        <div className="avatar"><img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
-      <div className="msg">
-        <p><emoji className="lmao"/></p>
-        <time>18:08</time>
-      </div>
-    </li>
-    <li className="self">
-        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Es broma</p>
-        <p>Ataque Moai!</p>
-        <p><span><emoji className="moai"/></span><span><emoji className="moai"/></span><span><emoji className="moai"/></span><span><emoji className="moai"/></span><span><emoji className="moai"/></span><span><emoji className="moai"/></span></p>
-        <time>18:09</time>
-      </div>
-    </li>
-    <li className="other">
-        <div className="avatar"><img src="http://i.imgur.com/DY6gND0.png" draggable="false"/></div>
-      <div className="msg">
-          <p>Copón</p>
-        <p><emoji className="funny"/></p>
-        <time>18:08</time>
-      </div>
-    </li>
-    <li className="self">
-        <div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>
-      <div className="msg">
-        <p>Hey there's a new update about this chat UI with more responsive elements! Check it now:</p>
-        <p><a href="http://codepen.io/Varo/pen/YPmwpQ" target="parent">Chat UI 2.0</a></p>
-        <time>18:09</time>
-      </div>
-    </li>
-    </ol>*/}
-    {/*<input className="textarea" type="text" placeholder="Type here!"/><div className="emojis"></div>*/}
+    </li>    
+    </ol>
+
+  <div className="fixedchatbox">
+  <div style={displayinline}>
+  <textarea
+          ref="newText"
+          style={chatinputbox}
+          placeholder="Please Enter Your message......."
+          className="form-control"
+        />
+   <IconButton tooltip="SVG Icon" onClick={this.sendMsg}>
+   <svg fill="#FFFFFF" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+    <path d="M0 0h24v24H0z" fill="none"/>
+</svg>
+    </IconButton>
+  </div>
+  </div>    
+ 
+ <br/>
+   <br/>
+   <br/>
+   <br/>
 
             </div>
+
+            }
+            </div>)
+} 
 </Scrollbars>
- {/*</Infinite> */}
-
-
       </div>
     );
   }
 }
+    // <li className="self">
+    //     {/*<div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>*/}
+    //   <div className="msg">
+    //     <p>But first he stabs Dolores.</p>
+  
+    //     <time>20:18</time>
+    //   </div>
+    // </li>

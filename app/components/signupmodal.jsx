@@ -2,42 +2,36 @@ import React from 'react';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
+import getMuiTheme from "material-ui/styles/getMuiTheme";
+import { cyan500 } from "material-ui/styles/colors";
+import { greenA400 } from "material-ui/styles/colors";
+import MuiThemeProvider from "material-ui/styles/MuiThemeProvider";
 
-/**
- * Dialog with action buttons. The actions are passed in as an array of React objects,
- * in this example [FlatButtons](/#/components/flat-button).
- *
- * You can also close this dialog by clicking outside the dialog, or with the 'Esc' key.
- */
+
+const muiTheme = getMuiTheme({
+  palette: {
+    primary1Color: greenA400
+   }
+});
+
+
 export default class SignupDialog extends React.Component {
+  
+  constructor(props)
+  {
+    super(props);
+    
+  }
   state = {
     open: false,
   };
 
   handleOpen = () => {
-    this.setState({open: true});
-  };
+        this.props.lock.show();
 
-  handleClose = () => {
-    this.setState({open: false});
   };
-     
-
 
   render() {
-    const actions = [
-      <FlatButton
-        label="Cancel"
-        primary={true}
-        onTouchTap={this.handleClose}
-      />,
-      <FlatButton
-        label="Submit"
-        primary={true}
-        keyboardFocused={false}
-        onTouchTap={this.handleClose}
-      />,
-    ];
 
     const sty =
     {
@@ -45,27 +39,14 @@ export default class SignupDialog extends React.Component {
     }
 
     return (
+          <MuiThemeProvider muiTheme={muiTheme}>
+
       <div>
-        <RaisedButton label="Sign Up!" style={sty} backgroundColor="#00E676" labelColor="white" onTouchTap={this.handleOpen} />
-      
-
-        <Dialog
-          title="Sign Up"
-          actions={actions}
-          modal={false}
-          open={this.state.open}
-          onRequestClose={this.handleClose}
-        >
-
-<form>
-
-  <input placeholder="huhuhuhu"/>
-
-
-</form>
-        </Dialog>
-        
+        <RaisedButton label={this.props.title} style={sty} primary={true}   onTouchTap={this.handleOpen} />       
       </div>
+</MuiThemeProvider>
+// labelColor="white" backgroundColor="#00E676"
     );
   }
 }
+
