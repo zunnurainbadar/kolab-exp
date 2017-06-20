@@ -124,9 +124,10 @@ _handleClick(Users)
     ChatStore.groupavatar = Users.pic;
     console.log('This is name '+ ChatStore.groupname);
     console.log('This is id '+ ChatStore.groupId);
-        var roomId=ChatStore.groupId;
-      console.log('room '+ roomId);
-
+    var roomId=ChatStore.groupId;
+    console.log('THis is roomID in chat store '+ roomId);
+    console.log('room '+ roomId);
+    socket.emit('roomId', roomId);
 // var location = 'api/user/' + roomId;
 
 // $.ajax({
@@ -144,7 +145,6 @@ _handleClick(Users)
 //    }
 
 // });
-socket.emit('roomId', roomId);
 }
 componentDidMount() {
 
@@ -217,6 +217,7 @@ console.log('inside chatstore if');
       socket.on('msgs',function(data){
       console.log('This is data in get msgs '+ data.msg);
       ChatStore.msgs = data.msg;
+      console.log('This is data in chatStore ' + ChatStore.msgs);
     })
 var location = 'api/user';
 $.ajax({

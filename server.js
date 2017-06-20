@@ -133,6 +133,7 @@ app.post("/api/user/friendrequest", function(req, res) {
 //     res.sendfile(__dirname + '/public/index.html');
 // });
 app.post("/api/user/myuserid", function(req, res) {
+    console.log('myuserId is executed');
     var myuserid = req.body.id;
     console.log("myuserid server");
     console.log(myuserid);
@@ -238,12 +239,17 @@ app.get("/api/userbyuId/:uId", function(req, res) {
 });
 
 app.get("/api/user/:uId", function(req, res) {
+    console.log(':uId is executed');
     // get the user's verified from the url and find that user
     console.log('This is req.params id ' + req.params.uId);
-    // mongoose.model("User").find({ uId: req.params.uId }, function(err, User) {
-    //     if (err) console.log(err);
-    //     res.send(JSON.stringify(User));
-    // });
+    mongoose.model("User").find({ user_id: req.params.uId }, function(err, User) {
+        if (err) console.log(err);
+        if (JSON.stringify(User)) {
+            console.log('Does not founud');
+        }
+        res.send(JSON.stringify(User));
+        console.log('THis is in uId ' + JSON.stringify(User));
+    });
 });
 app.get("/api/user/:roomId", function(req, res) {
     // get the user's verified from the url and find that user
@@ -263,6 +269,7 @@ app.get("/api/user/:roomId", function(req, res) {
 
 app.get("/api/user/:user_id", function(req, res) {
     // get the user's verified from the url and find that user
+    console.log(': is executed');
     mongoose
         .model("User")
         .find({ user_id: req.params.user_id }, function(err, User) {
@@ -272,8 +279,10 @@ app.get("/api/user/:user_id", function(req, res) {
 });
 
 app.get("/api/user", function(req, res) {
+    console.log('no one is executed');
     mongoose.model("User").find(function(err, User) {
         res.send(JSON.stringify(User));
+        // console.log('THis is in no one '+ JSON.stringify(User));
     });
 });
 
@@ -301,7 +310,24 @@ io.on('connection', function(socket) {
     });
 
     socket.on("send message", function(data) {
+
         console.log('This is socket.usernmae ' + socket.username)
+        console.log('This is your message to save ' + data.msg);
+        console.log('This is room id in send message ' + data.roomId);
+        rooms.update({ 'roomId': data.roomId }, {
+                $push: {
+                    conversation: {
+                        from: socket.username,
+                        message: data.msg
+                    }
+                }
+            },
+            function(err) {
+                if (err) console.log('This is errro ' + err)
+                else {
+                    console.log('Successful...!')
+                }
+            })
         socket.emit('new message', { username: socket.username, msg: data, pic: socket.picture })
     });
     socket.on("add user", function(data) {
@@ -313,15 +339,37 @@ io.on('connection', function(socket) {
         users.push({ id: socket.id, username: data, pic: data.picture });
     })
     socket.on('roomId', function(data) {
-        rooms.find({ _id: data }, function(
+        console.log('THis is data coming from roomId ' + data);
+        rooms.find({ roomId: data }, function(
             err,
             rooms
         ) {
             if (err) {
                 console.log('There is an error');
             } else {
-                console.log('These are rooms from database ' + rooms[0].conversation);
+                console.log('These are rooms from database ' + rooms);
+                console.log('This is for space');
+                console.log('These are rooms.conversation from database ' + rooms[0].conversation);
+                // console.log('This is for space');
                 socket.emit('msgs', { msg: rooms[0].conversation });
+                // res.send(rooms);
+            }
+        });
+    })
+    socket.on('sending', function(data) {
+        console.log('THis is data coming from roomId ' + data);
+        rooms.find({ roomId: data }, function(
+            err,
+            rooms
+        ) {
+            if (err) {
+                console.log('There is an error');
+            } else {
+                console.log('These are rooms from database ' + rooms);
+                console.log('This is for space');
+                console.log('These are rooms.conversation from database ' + rooms[0].conversation);
+                // console.log('This is for space');
+                socket.emit('returnmsgs', { msg: rooms[0].conversation });
                 // res.send(rooms);
             }
         });
