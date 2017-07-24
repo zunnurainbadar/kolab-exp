@@ -1,12 +1,13 @@
 import mobx, { observable } from "mobx";
 
 class FriendshipsStore {
-
   @observable acceptrequests = [];
   @observable stateAcceptRequest = false;
 
-@observable friendlistcount;
-@observable acceptrequestscount;
+  @observable friendlistcount;
+  @observable myfriendslist = [];
+  @observable acceptrequestscount;
+  @observable totalfriends = [];
 
   // @observable fullscreen = !
 }

@@ -4,23 +4,27 @@ import muiThemeable from "material-ui/styles/muiThemeable";
 import MuiThemeProvider from "material-ui/styles/MuiThemeProvider";
 import AppBar from "material-ui/AppBar";
 
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import MobileTearSheet from 'app/api/MobileTearSheet.js';
-import Badge from 'material-ui/Badge';
-import {List, ListItem, makeSelectable} from 'material-ui/List';
-import Divider from 'material-ui/Divider';
-import FileFolder from 'material-ui/svg-icons/file/folder';
-import Subheader from 'material-ui/Subheader';
-import Avatar from 'material-ui/Avatar';
-import {grey400, darkBlack, lightBlack,blue300} from 'material-ui/styles/colors';
-import IconButton from 'material-ui/IconButton';
-import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
-import IconMenu from 'material-ui/IconMenu';
-import MenuItem from 'material-ui/MenuItem';
-var Infinite = require('react-infinite');
-import { Scrollbars } from 'react-custom-scrollbars';
-import Msgbar from 'app/components/toolbars/msgtoolbar.jsx';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import MobileTearSheet from "app/api/MobileTearSheet.js";
+import Badge from "material-ui/Badge";
+import { List, ListItem, makeSelectable } from "material-ui/List";
+import Divider from "material-ui/Divider";
+import FileFolder from "material-ui/svg-icons/file/folder";
+import Subheader from "material-ui/Subheader";
+import Avatar from "material-ui/Avatar";
+import {
+  grey400,
+  darkBlack,
+  lightBlack,
+  blue300
+} from "material-ui/styles/colors";
+import IconButton from "material-ui/IconButton";
+import MoreVertIcon from "material-ui/svg-icons/navigation/more-vert";
+import IconMenu from "material-ui/IconMenu";
+import MenuItem from "material-ui/MenuItem";
+import { Scrollbars } from "react-custom-scrollbars";
+import Msgbar from "app/components/toolbars/msgtoolbar.jsx";
 import Toolbar from "app/components/toolbar.jsx";
 import Boards from "app/components/Note.jsx";
 import TimeTable from "app/components/dashboard/timetable.jsx";
@@ -30,32 +34,31 @@ import { observer } from "mobx-react";
 import Chat from "app/components/chat.jsx";
 import Board from "app/components/board.jsx";
 import getMuiTheme from "material-ui/styles/getMuiTheme";
-import { cyan500 } from "material-ui/styles/colors";
+import { cyan500, grey50, grey900 } from "material-ui/styles/colors";
 import { greenA400 } from "material-ui/styles/colors";
 import UserStore from "app/store/UserStore.js";
-import axios from 'axios';
-import ChatStore from 'app/store/ChatStore.js'
+import ChatStore from "app/store/ChatStore.js";
 
-
+let rooms = [];
 let SelectableList = makeSelectable(List);
 function wrapState(ComposedComponent) {
   return class SelectableList extends Component {
     static propTypes = {
       children: PropTypes.node.isRequired,
-      defaultValue: PropTypes.number.isRequired,
+      defaultValue: PropTypes.number.isRequired
     };
 
     componentWillMount() {
       this.setState({
-        selectedIndex: this.props.defaultValue,
+        selectedIndex: this.props.defaultValue
       });
     }
 
     handleRequestChange = (event, index) => {
       this.setState({
-        selectedIndex: index,
+        selectedIndex: index
       });
-      console.log('list clickedeed')
+      // console.log("list clickedeed");
     };
 
     render() {
@@ -73,287 +76,286 @@ function wrapState(ComposedComponent) {
 
 SelectableList = wrapState(SelectableList);
 
-
-
-const iconButtonElement = (
-  <IconButton
-    touch={true}
-    tooltip="more"
-    tooltipPosition="bottom-left"
-  >
-    <MoreVertIcon color={grey400} />
-  </IconButton>
-);
-
-const rightIconMenu = (
-  <IconMenu iconButtonElement={iconButtonElement}>
-    <MenuItem>Reply</MenuItem>
-    <MenuItem>Delete</MenuItem>
-    <MenuItem>Details</MenuItem>
-  </IconMenu>
-);
-
 const style = {
-  height: '100%',
-}
-    var listmap;
+  height: "100%"
+};
+var listmap;
 let users = [];
 // let otherusers = [];
 let realusers = [];
 
-var socket;
+// var socket;
 @observer
 export default class ListChatContainer extends React.Component {
   constructor(props) {
     super(props);
-    this._handleClick = this._handleClick.bind(this);  
- socket =io.connect();
+    this._handleClick = this._handleClick.bind(this);
+    // socket = io.connect();
     this.state = {
+      data: []
     };
-      }
+    // UserStore.obj.rooms = [];
+  }
 
-_handleClick(Users)
-{
-   ChatStore.btnClick = true;
-    console.log("listttt")
-    // alert('ok')
-    // console.log(Users.picture)
-    // ChatStore.groupavatar = Users.picture;
+  _handleLeave(Users) {
+    //alert(Users._id);
+    var data = {
+      user_id: UserStore.obj.user_id,
+      roomId: Users._id
+    };
+    socket.emit("room leave", data);
+    socket.on("remaininggroups", function(data) {
+      // console.log("data[0].rooms");
+      // console.log(data[0].rooms);
+      UserStore.obj.rooms = data[0].rooms;
+    });
+  }
+  _handleClick(Users) {
+    ChatStore.btnClick = true;
+    // console.log(JSON.stringify(Users));
+    // ChatStore.sendTo = Users.roomName;
     ChatStore.groupId = Users.roomId;
     ChatStore.groupname = Users.roomName;
     ChatStore.groupavatar = Users.pic;
-    console.log('This is name '+ ChatStore.groupname);
-    console.log('This is id '+ ChatStore.groupId);
-    var roomId=ChatStore.groupId;
-    console.log('THis is roomID in chat store '+ roomId);
-    console.log('room '+ roomId);
-    socket.emit('roomId', roomId);
-// var location = 'api/user/' + roomId;
+    var roomId = ChatStore.groupId;
+    socket.emit("Join room", ChatStore.groupname);
+    socket.emit("roomId", roomId);
+    var location = "/api/rooms/" + roomId;
 
-// $.ajax({
-//     url : location,
-//     type : 'GET',
-//    data: {
-//       format: 'json'
-//    },dataType: 'json',
-//     success : function(data) {
-//       console.log('Successfull');
-//       console.log('This is data comming '+ data);
-// },
-//    error: function(err) {
-//      console.log('error in get of room'+err);
-//    }
+    socket.emit("note map", roomId);
+    $.ajax({
+      url: location,
+      type: "GET",
+      data: {
+        format: "json"
+      },
+      dataType: "json",
+      success: function(data) {
+        ChatStore.participants = JSON.parse(data[0].participants);
+        ChatStore.readcount = Object.keys(data[0].conversation).length;
+        ChatStore.notescount = Object.keys(data[0].notes).length;
+        console.log("data[0].notes");
+        console.log(data[0].notes.length);
+        var data = {
+          user_id: UserStore.obj.user_id,
+          _id: Users._id,
+          count: ChatStore.readcount.toString(),
+          notescount: ChatStore.notescount.toString()
+        };
 
-// });
-}
-componentDidMount() {
-
-// let userid = localStorage.getItem('userid');
-
-//    $.ajax({
-//     type: 'GET',
-//     url: '/api/userall'
-//     })
-//   .done(function(data) {
-// // console.log(data)  
-// users = data;
-// console.log("users");
-// console.log(users);
-
-// var index = users.findIndex(function(o){
-//      return o.user_id ===userid;
-// })
-// users.splice(index, 1);
-
-// UserStore.allUsers = users;
-// UserStore.listy=true;
-// })
-//   .fail(function(jqXhr) {
-//     console.log('failed to register');
-//   });
-// var otherusers = new Map(data.map((i) => [i.other_id]));
-// var otherusers = new Map(data.map((i) => [i.key, i.other_id]));
-
-// var otherusers = data.map(function() {
-//   return data.other_id;
-// });
-// console.log(otherusers)
-
-//  $.ajax({
-//     type: 'GET',
-//     url: '/api/user/friendlistuser'
-//     })
-//   .done(function(data) {
-// console.log(data);
-// users=data;
-// UserStore.listy=true;
-
-
-// })
-//   .fail(function(jqXhr) {
-//     console.log('friendlist mai msla');
-//   });
-//  $.ajax({
-//     type: 'GET',
-//     url: '/api/user/friendlist'
-//     })
-//   .done(function(data) {
-// console.log("meri friendlist");
-// console.log(data);
-
-// users=data;
-// // otherusers=data.other_id;
-// // realusers=data.user_id;
-// UserStore.listy=true;
-
-
-
-
-// })
-//   .fail(function(jqXhr) {
-//     console.log('friendlist mai msla');
-//   });
-console.log('inside chatstore if');
-      socket.on('msgs',function(data){
-      console.log('This is data in get msgs '+ data.msg);
-      ChatStore.msgs = data.msg;
-      console.log('This is data in chatStore ' + ChatStore.msgs);
-    })
-var location = 'api/user';
-$.ajax({
-    url : location,
-    type : 'GET',
-   data: {
-      format: 'json'
-   },dataType: 'json',
-    success : function(data) {
-                  users=data[0].rooms;
-                  UserStore.listy=true;
-                  console.log('This is object '+users);
-      console.log('This is user  '+ users[1].roomName);
-
-// console.log('This is users '+ UserStore.obj.rooms);
-},
-   error: function() {
-     console.log('error in get');
-   }
-
-});
-//    $.ajax({
-//     type: 'GET',
-//     url: '/api/user/groupList'
-//     })
-//   .done(function(data) {
-// console.log("meri Group List");
-// console.log(data);
-// users=data;
-// console.log('This is users '+ users);
-// // otherusers=data.other_id;
-// // realusers=data.user_id;
-// UserStore.listy=true;
-
-
-
-
-// })
-//   .fail(function(jqXhr) {
-//     console.log('Grouplist mai msla');
-//   });
-
-
-}
-
-  render() {
-  
-
- const liststatus = UserStore.listy;
-
-
-return(
- 
- <div>
- 
- <div className="margin" style={style}>
-    <MobileTearSheet>
-
-<Msgbar/>
-<input type="search" placeholder="Search Messages here....."/>
-             <Subheader>Today</Subheader>
-
- <Scrollbars  autoHeightMin={0} style={{ height: '100vh' }}
-        autoHeightMax={50}
-        thumbMinSize={50} >
-
-  {liststatus ? (
-           <div>
-{users.map(Users => {
-              return (  
- <SelectableList defaultValue={3}>
-                <div className="" key={Users}>
-
-        <ListItem onTouchTap={() => this._handleClick(Users)}  value={4}
-            leftAvatar={
-        <Avatar
-          size={40} src={Users.pic}
-        >       
- <Badge   badgeContent={4}
-      primary={true}/>
-         </Avatar>
+        socket.emit("readcountmsg", data);
+      },
+      error: function(err) {
+        console.log("error in get of room" + err);
       }
-                
-       rightIconButton={rightIconMenu}
-          primaryText={Users.roomName}
-            
-                 secondaryText={
-            <p>
-          This is some random text
-            </p>
-          }
-          secondaryTextLines={2}
-         
-        />
+    });
+  }
+  componentDidMount() {
+    socket.on("msgs", function(data) {
+      ChatStore.msgs = data.msg;
+    });
+    socket.on("dbnotes", function(data) {
+      ChatStore.notes = data.dbnotes;
+    });
+    // this.state.data = UserStore.obj.rooms;
+
+    setInterval(
+      function() {
+        socket.emit("read sync", UserStore.obj.user_id);
+
+        socket.on("sync success", function(data) {
+          // console.log("data[0].rooms");
+          // console.log(data[0].rooms);
+          UserStore.obj.rooms = data[0].rooms;
+
+          // var result = UserStore.obj.rooms.map(function(a) {
+          //   return a.roomId;
+          // });
+
+          //  console.log("result");
+          //    console.log(result);
+        });
+
+        // socket.on("calculated conversations", function(data) {
+        //   // console.log("data[0].rooms");
+        //   //  console.log(data);
+        // });
+      }.bind(this),
+      5000
+    );
+  }
+  // _handleContinuousRender() {
+  //   //alert(Users._id);
+  // }
+  render() {
+    const iconButtonElement = (
+      <IconButton touch={true} tooltip="more" tooltipPosition="bottom-left">
+        <MoreVertIcon color={grey400} />
+      </IconButton>
+    );
+
+    const liststatus = UserStore.listy;
+    if (UserStore.obj.rooms == null || UserStore.obj.rooms == undefined)
+      rooms = [];
+    else rooms = UserStore.obj.rooms;
+
+    // setTimeout(
+    //   function() {
+    //     if (UserStore.obj.rooms == null || UserStore.obj.rooms == undefined)
+    //       rooms = [];
+    //     else rooms = UserStore.obj.rooms;
+    //   }.bind(this),
+    //   1000
+    // ); //
+    //  console.log(rooms);
+    return (
+      <div>
+        <div className="margin" style={style}>
+          <MobileTearSheet>
+            <Msgbar />
+            <Subheader>Today</Subheader>
+
+            <Scrollbars
+              autoHeightMin={0}
+              style={{ height: "100vh" }}
+              autoHeightMax={50}
+              thumbMinSize={50}
+            >
+              {rooms.map(Users => {
+                if (
+                  Users.total_count - Users.read_count == 0 &&
+                  Users.total_notes_count - Users.read_notes_count == 0
+                ) {
+                  return (
+                    <div key={Users._id}>
+                      <SelectableList defaultValue={3} key={Users._id}>
+                        <div className="" key={Users._id}>
+                          <ListItem
+                            key={Users._id}
+                            onTouchTap={() => this._handleClick(Users)}
+                            value={4}
+                            leftAvatar={
+                              <Avatar
+                                size={40}
+                                key={Users._id}
+                                color={darkBlack}
+                              >
+                                {Users.pic}
+                              </Avatar>
+                            }
+                            rightIconButton={
+                              <IconMenu
+                                key={Users._id}
+                                iconButtonElement={iconButtonElement}
+                              >
+                                <MenuItem
+                                  key={Users._id}
+                                  onTouchTap={this._handleLeave.bind(
+                                    this,
+                                    Users
+                                  )}
+                                >
+                                  Leave Group
+                                </MenuItem>
+                              </IconMenu>
+                            }
+                            primaryText={Users.roomName}
+                            secondaryText={<p />}
+                            secondaryTextLines={1}
+                          />
+                        </div>
+
+                        <Divider inset={true} />
+                      </SelectableList>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div key={Users._id}>
+                      <SelectableList defaultValue={3} key={Users._id}>
+                        <div className="" key={Users._id}>
+                          <ListItem
+                            key={Users._id}
+                            onTouchTap={() => this._handleClick(Users)}
+                            value={4}
+                            leftAvatar={
+                              <Avatar
+                                size={40}
+                                key={Users._id}
+                                color={darkBlack}
+                              >
+                                {Users.pic}
+                              </Avatar>
+                            }
+                            rightIconButton={
+                              <IconMenu
+                                key={Users._id}
+                                iconButtonElement={iconButtonElement}
+                              >
+                                <MenuItem
+                                  key={Users._id}
+                                  onTouchTap={this._handleLeave.bind(
+                                    this,
+                                    Users
+                                  )}
+                                >
+                                  Leave Group
+                                </MenuItem>
+                              </IconMenu>
+                            }
+                            primaryText={
+                              <div>
+                                {Users.roomName}
+                                &nbsp;
+                                <Badge
+                                  badgeStyle={{
+                                    color: "black"
+                                  }}
+                                  primary={true}
+                                  badgeContent={
+                                    Users.total_count - Users.read_count
+                                  }
+                                />
+                                &nbsp; &nbsp; &nbsp;
+                                <Badge
+                                  badgeStyle={{
+                                    backgroundColor: "#FFEB3B"
+                                  }}
+                                  badgeContent={
+                                    Users.total_notes_count -
+                                    Users.read_notes_count
+                                  }
+                                />
+                              </div>
+                            }
+                          />
+                        </div>
+
+                        <Divider inset={true} />
+                      </SelectableList>
+                    </div>
+                  );
+                }
+              })}
+
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              {/*</Infinite>*/}
+            </Scrollbars>
+          </MobileTearSheet>
+        </div>
+        );{" "}
       </div>
-
-
-        <Divider inset={true} />
-             </SelectableList>
-
-              );
-
-            })}
-</div>
-      ) : (
-<div></div> 
-
-
-      )} 
-
-
-   <br/>     
-   <br/>
-   <br/>
-   <br/>       
-
-        <br/>
-   <br/>
-   <br/>
-   <br/>
-   <br/>
-   <br/>
-   <br/>
-   <br/>
-
-
-
-  {/*</Infinite>*/}
-      </Scrollbars>
-
-    </MobileTearSheet>
-
-  </div>
-); </div>
-    
-);
-
+    );
   }
 }

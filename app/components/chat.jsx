@@ -1,24 +1,38 @@
 import React from "react";
 import RaisedButton from "material-ui/RaisedButton";
-var Infinite = require("react-infinite");
 import Toolbar from "Toolbar";
 import { Scrollbars } from "react-custom-scrollbars";
 import Avatar from "material-ui/Avatar";
 import FloatingActionButton from "material-ui/FloatingActionButton";
-import ContentAdd from "material-ui/svg-icons/content/add";
+// import ContentAdd from "material-ui/svg-icons/content/add";
 import Chatbar from "app/components/toolbars/chattoolbar.jsx";
+var ReactDOM = require("react-dom");
+
 //import ReactScrollbar from 'react-scrollbar-js';
-import ChatStore from "app/store/ChatStore.js";
 import { observer } from "mobx-react";
 import IconButton from "material-ui/IconButton";
 import UserStore from "app/store/UserStore.js";
 import Store from "app/store/UIstore.js";
+import ChatStore from "app/store/ChatStore.js";
 import { map } from "mobx";
+import ActionGrade from "material-ui/svg-icons/action/grade";
+import ActionMore from "material-ui/svg-icons/navigation/expand-more";
+import SvgIcon from "material-ui/SvgIcon";
+import { blue500, red500, grey300 } from "material-ui/styles/colors";
+import Dialog from "material-ui/Dialog";
 
-var socket;
+import IconMenu from "material-ui/IconMenu";
+import MenuItem from "material-ui/MenuItem";
+// var socket;
 var today;
+var msgs;
+var adding;
 const style = {
   margin: 12
+};
+const customContentStyle = {
+  width: "30%",
+  maxWidth: "none"
 };
 const displayinline = {
   display: "flex",
@@ -28,7 +42,29 @@ const chatinputbox = {
   height: "3.5rem",
   margin: "0 0 0rem"
 };
+const starstyle = {
+  float: "right",
+  height: "20px",
+  width: "20px",
+  padding: "0px"
+};
+const delstyle = {
+  float: "left",
+  height: "20px",
+  width: "20px",
+  padding: "0px"
+};
+const morestyle = {
+  float: "right",
+  height: "20px",
+  width: "20px",
+  padding: "0px"
+};
+// color: "#ccc",
 
+const starcolor = {
+  color: "#ccc"
+};
 const inputBoxStyle = {
   width: "100%"
 };
@@ -43,213 +79,390 @@ const fixedPosition = {
 };
 
 const heightchat = {
-  height: "100%",
-  backgroundColor: "#EDF8F5"
+  height: "100%"
+  // backgroundColor: "#EDF8F5"
 };
 @observer
 export default class Chat extends React.Component {
   constructor(props) {
     super(props);
     this.sendMsg = this.sendMsg.bind(this);
-    //  this.getMsgs = this.getMsgs.bind(this);
-    socket = io.connect();
-    // socket = io.connect('http://localhost:3000');
-    this.state = {};
-  }
-  componentWillMount() {
-    // console.log('This is your name '+ UserStore.userrealname)
-  }
-  sendMsg() {
-    var roomId=ChatStore.groupId;
-    socket.emit("add user", UserStore);
-    console.log("Send button is pressed");
-    console.log("This is the text " + this.refs.newText.value);
-    socket.emit("send message", {msg:this.refs.newText.value,roomId:ChatStore.groupId});
-    console.log('This is roomId '+ roomId);
-    socket.emit('sending', roomId);
-    this.refs.newText.value = "";
+    // socket = io.connect();
+    this.scrollToBottom = this.scrollToBottom.bind(this);
 
-    socket.on("new message", function(data) {
-      var d = new Date();
-      var n = d.getTime();
-      console.log(
-        "This is the username of " +
-          data.username +
-          "and this is message " +
-          data.msg +
-          "and this is picture " +
-          data.pic
-      );
-      // var list = document.getElementById("msgList");
-      // console.log("THis is my socket.id " + socket.id);
-      // // if(data.id == socket.io){
-      // var d = new Date();
-      // $("#msgList").append(
-      //   '<li class="other"><div class="avatar"><img src=' +
-      //     data.pic +
-      //     ' draggable="false"/></div><div class="msg"><p>' +
-      //     data.msg +
-      //     "</p><time>" +
-      //     d.getHours() +
-      //     ":" +
-      //     d.getMinutes() +
-      //     "</time><sender>" +
-      //     data.username +
-      //     "</sender></div></li>"
-      // );
-      // }
-      // else {
-      //   $("#msgList").append('<li class="self"><div class="msg"><p> '+data.msg+' </p><time>20:18</time></div></li>');
-      // }
-      // list.append('<div class="well"><strong>'+data.username+'</strong>:'+data.msg+'</div>')
+    var data = {
+      roomId: ChatStore.groupId
+    };
+    socket.emit("retrieve msgs", data);
+    socket.on("chat msgs", function(data) {
+      ChatStore.msgs = data[0].conversation;
     });
-          socket.on('returnmsgs',function(data){
-      console.log('This is data in get msgs '+ data.msg);
-      ChatStore.msgs = data.msg;
-      console.log('This is data in chatStore ' + ChatStore.msgs);
-    })
+    this.state = {
+      status: false
+    };
+  }
+  componentWillReceiveProps(nextProps) {
+    var data = {
+      roomId: ChatStore.groupId
+    };
+    socket.emit("retrieve msgs", data);
+    socket.on("chat msgs", function(data) {
+      ChatStore.msgs = data[0].conversation;
+    });
+  }
+
+  componentDidMount() {
+    var data = {
+      roomId: ChatStore.groupId
+    };
+    socket.emit("retrieve msgs", data);
+    this.scrollToBottom();
+
+    socket.on("chat msgs", function(data) {
+      ChatStore.msgs = data[0].conversation;
+    });
+  }
+  scrollToBottom = () => {
+    const messagesContainer = ReactDOM.findDOMNode(this.messagesContainer);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  };
+
+  componentDidUpdate() {
+    this.scrollToBottom();
+  }
+
+  // setInterval(
+  //   function() {
+  //     var data = {
+  //       roomId: ChatStore.groupId
+  //     };
+  //     socket.emit("retrieve msgs", data);
+  //     socket.on("chat msgs", function(data) {
+  //       ChatStore.msgs = data[0].conversation;
+  //     });
+  //   }.bind(this),
+  //   1500
+  // );
+
+  handleStar = Users => {
+    //    console.log(Users.favourite.toString());
+    var result;
+    if (Users.favourite == true) {
+      result = false;
+    } else result = true;
+    var data = {
+      _id: Users._id,
+      roomId: ChatStore.groupId,
+      star: result
+    };
+
+    socket.emit("favourite msg", data);
+    this.setState({
+      status: true
+    });
+    socket.on("remainingmsgs", function(data) {
+      ///   console.log("da");
+      console.log(data[0].conversation);
+
+      ChatStore.msgs = data[0].conversation;
+    });
+  };
+  handleDelete = Users => {
+    // alert(Users._id);
+    var data = {
+      _id: Users._id,
+      roomId: ChatStore.groupId
+    };
+
+    socket.emit("msg delete", data);
+
+    socket.on("remainingmsgs", function(data) {
+      console.log("da");
+      console.log(data[0].conversation);
+
+      ChatStore.msgs = data[0].conversation;
+    });
+  };
+
+  handleDetails = Users => {
+    Store.msgdetails = true;
+    ChatStore.individualmsg = Users;
+  };
+  handleClose = () => {
+    Store.msgdetails = false;
+  };
+  // renderView = () => {
+  //   // this.refs.scrollbars.scrollToTop();
+  // };
+  sendMsg() {
+    var roomId = ChatStore.groupId;
+    socket.emit("add user", UserStore);
+    // this.refs.scrollbars.scrollToTop();
+
+    // console.log("Send button is pressed");
+    // console.log("This is the text " + this.refs.newText.value);
+    if (this.refs.newText.value == "") {
+    } else {
+      ChatStore.msgs.push({
+        from: UserStore.userrealname,
+        message: this.refs.newText.value,
+        favourite: false,
+        date: new Date(),
+        time: new Date().getTime(),
+        //   var d = new Date();
+        //   var n = d.getTime();
+        picture: UserStore.obj.picture
+      });
+
+      // var data1 = {
+      //   favourite: false,
+      //   msg: this.refs.newText.value,
+      //   picture: UserStore.obj.picture
+      // };
+      // socket.emit("chat message", data1);
+      console.log("ChatStore.groupname");
+      console.log(ChatStore.groupname);
+      socket.on("chat messagey", function(msg) {
+        ChatStore.msgs.push(msg);
+
+        socket.emit("recieving msgs", ChatStore.groupId);
+        socket.on("remaining msgs", function(data) {
+          ///   console.log("da");
+          console.log(data[0].conversation);
+
+          ChatStore.msgs = data[0].conversation;
+        });
+
+        // ChatStore.msgs.push(msg);
+        // console.log(msg);
+        console.log("212321");
+      });
+      console.log("ChatStore.groupname");
+      console.log(ChatStore.groupname);
+      socket.emit("send message", {
+        msg: this.refs.newText.value,
+        roomId: roomId,
+        picture: UserStore.obj.picture,
+        sendTo: ChatStore.groupname
+      });
+      // socket.emit("emt", "abc");
+      //console.log("This is roomId " + roomId);
+      // socket.emit("sending", roomId);
+      this.refs.newText.value = "";
+
+      // socket.on("new message", function(data) {
+      //   var d = new Date();
+      //   var n = d.getTime();
+      //   ChatStore.msgs.push(data);
+      //   console.log("kuch bhi");
+      // });
+
+      // socket.on("returnmsgs", function(data) {
+      //   ChatStore.msgs = data.msg;
+      // });
+
+      var data = {
+        user_id: UserStore.obj.user_id,
+        _id: ChatStore.groupId,
+        count: ChatStore.msgs,
+        participants: ChatStore.participants
+
+        //ChatStore.readcount = Object.keys(data[0].conversation).length;
+      };
+      socket.emit("readcount send", data);
+      socket.on("emtt", function(data) {
+        console.log(data);
+      });
+
+      // socket.emit("calculate conversations", result);
+    }
   }
 
   render() {
-    console.log("This is data in store chat " + ChatStore.msgs);
+    //  console.log("This is data in store chat " + ChatStore.msgs);
     var users = ChatStore.msgs;
     const liststatus = UserStore.listy;
     // const numbers = [1, 2, 3, 4, 5];
-    console.log("THis is users  " + users);
+    // console.log("THis is users  " + users);
     const myScrollbar = {
       width: 400,
       height: 400
     };
-
     const toolbarstyle = {
       top: "0px",
       position: "fixed"
     };
+    const HomeIcon = props =>
+      <SvgIcon {...props}>
+        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+      </SvgIcon>;
 
     return (
       <div className="" style={heightchat}>
         <Chatbar style={toolbarstyle} />
         {/*<Infinite containerHeight={500} elementHeight={4} displayBottomUpwards style={styling}> */}
         <Scrollbars
+          ref="scrollbars"
           style={{ height: "100%" }}
           autoHeightMin={0}
           autoHeightMax={500}
           thumbMinSize={30}
         >
           <div>
-
-            {users.map(Users => {
-              if(Users.from == UserStore.userrealname){
-              return (
-                <div className="panel" key={Users._id}>
-                  <ol className="chat" id="msgList">
-                    <li className="other">
-                      <div className="avatar">
-
-                        <div className="avatar">
-                          <img
-                            src="http://i.imgur.com/HYcn9xO.png"
-                            draggable="false"
-                          />
+            <div className="panel">
+              <ol className="chat" id="msgList">
+                {users.map(Users => {
+                  if (Users.favourite == false) {
+                    Users.color = "#ccc";
+                  } else Users.color = "#F44336";
+                  if (Users.from == UserStore.userrealname) {
+                    return (
+                      <li className="self" key={Users._id}>
+                        <div className="msg" key={Users._id}>
+                          <IconMenu
+                            key={Users._id}
+                            style={{ display: "inline" }}
+                            iconButtonElement={
+                              <IconButton
+                                className="Morebutton"
+                                style={delstyle}
+                              >
+                                <ActionMore />
+                              </IconButton>
+                            }
+                          >
+                            <MenuItem
+                              primaryText="Delete"
+                              onTouchTap={this.handleDelete.bind(this, Users)}
+                            />
+                            <MenuItem
+                              primaryText="Details"
+                              onTouchTap={this.handleDetails.bind(this, Users)}
+                            />
+                          </IconMenu>
+                          <p style={{ wordWrap: "break-word" }}>
+                            {Users.message}
+                          </p>
+                          <IconButton
+                            onTouchTap={this.handleStar.bind(this, Users)}
+                            style={starstyle}
+                          >
+                            <HomeIcon color={Users.color} />
+                          </IconButton>
+                          <time>{Users.time}</time>&emsp;
                         </div>
-                      </div>
+                      </li>
+                    );
+                  } else {
+                    return (
+                      <li className="other" key={Users._id}>
+                        <Avatar src={Users.picture} />
+                        <div className="msg" key={Users._id}>
+                          <IconMenu
+                            style={{ display: "inline" }}
+                            iconButtonElement={
+                              <IconButton
+                                className="Morebutton"
+                                style={morestyle}
+                              >
+                                <ActionMore />
+                              </IconButton>
+                            }
+                          >
+                            <MenuItem
+                              primaryText="Details"
+                              onTouchTap={this.handleDetails.bind(this, Users)}
+                            />
+                          </IconMenu>
+                          <p>
+                            {Users.message}
+                          </p>
+                          <IconButton
+                            onTouchTap={this.handleStar.bind(this, Users)}
+                            style={starstyle}
+                          >
+                            <HomeIcon color={Users.color} />
+                          </IconButton>
 
-                      <div className="msg">
-                        <p>{Users.message}</p>
-                        <time>20:17</time>
-                        <sender>Usama</sender>
-                      </div>
-                    </li>
-                  </ol>
-
-                  <div className="fixedchatbox">
-                    <div style={displayinline}>
-                      <textarea
-                        ref="newText"
-                        style={chatinputbox}
-                        placeholder="Please Enter Your message......."
-                        className="form-control"
-                      />
-                      <IconButton tooltip="SVG Icon" onClick={this.sendMsg}>
-                        <svg
-                          fill="#FFFFFF"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          width="24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                          <path d="M0 0h24v24H0z" fill="none" />
-                        </svg>
-                      </IconButton>
-                    </div>
-                  </div>
-
-                  <br />
-                  <br />
-                  <br />
-                  <br />
-
-                </div>
-              );
-              } else {
-                 return (
-                <div className="panel" key={Users._id}>
-                  <ol className="chat" id="msgList">
-                     <li className="self">
-                          {/*<div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>*/}
-                        <div className="msg">
-                          <p>{Users.message}</p>
-                    
-                          <time>20:18</time>
+                          <div style={{ display: "inline" }}>
+                            <time>{Users.time}</time>&emsp;
+                            <sender>{Users.from}</sender>&emsp;{" "}
+                          </div>
                         </div>
-                  </li>
-                  </ol>
+                      </li>
+                    );
+                  }
+                })}
+              </ol>
 
-                  <div className="fixedchatbox">
-                    <div style={displayinline}>
-                      <textarea
-                        ref="newText"
-                        style={chatinputbox}
-                        placeholder="Please Enter Your message......."
-                        className="form-control"
-                      />
-                      <IconButton tooltip="SVG Icon" onClick={this.sendMsg}>
-                        <svg
-                          fill="#FFFFFF"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          width="24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                          <path d="M0 0h24v24H0z" fill="none" />
-                        </svg>
-                      </IconButton>
-                    </div>
-                  </div>
-
-                  <br />
-                  <br />
-                  <br />
-                  <br />
-
-                </div>
-              );
-              }
-            })}
+              <br
+                ref={el => {
+                  this.messagesContainer = el;
+                }}
+              />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+              <br />
+            </div>
           </div>
-
         </Scrollbars>
+        <div className="fixedchatbox">
+          <Dialog
+            modal={false}
+            overlay={false}
+            onRequestClose={this.handleClose}
+            contentStyle={customContentStyle}
+            open={Store.msgdetails}
+          >
+            <h5>Msg details</h5>
+            <br />
+            <div className="">
+              <h5>
+                Creator : {ChatStore.individualmsg.from}
+              </h5>
+              <h5>
+                Date : {ChatStore.individualmsg.date}
+              </h5>
+              <h5>
+                Time : {ChatStore.individualmsg.time}
+              </h5>
+              <h5>
+                msg: {ChatStore.individualmsg.message}
+              </h5>
+            </div>
+            <br />
+          </Dialog>
+          <div style={displayinline}>
+            <textarea
+              ref="newText"
+              maxLength="250"
+              style={chatinputbox}
+              placeholder="Please Enter Your message......."
+              className="form-control"
+            />
+            <IconButton
+              tooltip="Send"
+              tooltipPosition="top-center"
+              onClick={this.sendMsg}
+            >
+              <svg
+                fill="#FFFFFF"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                <path d="M0 0h24v24H0z" fill="none" />
+              </svg>
+            </IconButton>
+          </div>
+        </div>
       </div>
     );
   }
 }
-// <li className="self">
-//     {/*<div className="avatar"><img src="http://i.imgur.com/HYcn9xO.png" draggable="false"/></div>*/}
-//   <div className="msg">
-//     <p>But first he stabs Dolores.</p>
-
-//     <time>20:18</time>
-//   </div>
-// </li>
