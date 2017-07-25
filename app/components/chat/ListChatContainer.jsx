@@ -132,10 +132,10 @@ export default class ListChatContainer extends React.Component {
       dataType: "json",
       success: function(data) {
         ChatStore.participants = JSON.parse(data[0].participants);
-        ChatStore.readcount = Object.keys(data[0].conversation).length;
+        ChatStore.readcount = Object.keys(data[0].conversation).length + 1;
         ChatStore.notescount = Object.keys(data[0].notes).length;
-        console.log("data[0].notes");
-        console.log(data[0].notes.length);
+        //  console.log("data[0].notes");
+        // console.log(data[0].notes.length);
         var data = {
           user_id: UserStore.obj.user_id,
           _id: Users._id,
@@ -164,22 +164,8 @@ export default class ListChatContainer extends React.Component {
         socket.emit("read sync", UserStore.obj.user_id);
 
         socket.on("sync success", function(data) {
-          // console.log("data[0].rooms");
-          // console.log(data[0].rooms);
           UserStore.obj.rooms = data[0].rooms;
-
-          // var result = UserStore.obj.rooms.map(function(a) {
-          //   return a.roomId;
-          // });
-
-          //  console.log("result");
-          //    console.log(result);
         });
-
-        // socket.on("calculated conversations", function(data) {
-        //   // console.log("data[0].rooms");
-        //   //  console.log(data);
-        // });
       }.bind(this),
       5000
     );
@@ -223,8 +209,13 @@ export default class ListChatContainer extends React.Component {
             >
               {rooms.map(Users => {
                 if (
-                  Users.total_count - Users.read_count == 0 &&
-                  Users.total_notes_count - Users.read_notes_count == 0
+                  (Users.total_count - Users.read_count == 0 &&
+                    Users.total_notes_count - Users.read_notes_count == 0) ||
+                  (Users.total_count - Users.read_count === NaN &&
+                    Users.total_notes_count - Users.read_notes_count === NaN) ||
+                  (isNaN(Users.total_count - Users.read_count) == true ||
+                    isNaN(Users.total_notes_count - Users.read_notes_count) ==
+                      true)
                 ) {
                   return (
                     <div key={Users._id}>

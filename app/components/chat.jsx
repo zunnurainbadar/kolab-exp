@@ -127,9 +127,9 @@ export default class Chat extends React.Component {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   };
 
-  componentDidUpdate() {
-    this.scrollToBottom();
-  }
+  // componentDidUpdate() {
+  //   this.scrollToBottom();
+  // }
 
   // setInterval(
   //   function() {
@@ -169,9 +169,12 @@ export default class Chat extends React.Component {
   };
   handleDelete = Users => {
     // alert(Users._id);
+        console.log('This is users._id '+ Users._id);
+    console.log('THis is Users '+ JSON.stringify(Users));
     var data = {
       _id: Users._id,
-      roomId: ChatStore.groupId
+      roomId: ChatStore.groupId,
+      user:Users
     };
 
     socket.emit("msg delete", data);
@@ -187,6 +190,7 @@ export default class Chat extends React.Component {
   handleDetails = Users => {
     Store.msgdetails = true;
     ChatStore.individualmsg = Users;
+            console.log('This is users._id in detail '+ Users._id);
   };
   handleClose = () => {
     Store.msgdetails = false;
@@ -198,7 +202,24 @@ export default class Chat extends React.Component {
     var roomId = ChatStore.groupId;
     socket.emit("add user", UserStore);
     // this.refs.scrollbars.scrollToTop();
+    var d = new Date(); // for now
+    d.getHours(); // => 9
+    d.getMinutes(); // =>  30
+    d.getSeconds(); // => 51
+    //console.log(d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds());
+    var time = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+    var today = new Date();
+    var dd = today.getDate();
+    var mm = today.getMonth() + 1; //January is 0!
+    var yyyy = today.getFullYear();
 
+    if (dd < 10) {
+      dd = "0" + dd;
+    }
+    if (mm < 10) {
+      mm = "0" + mm;
+    }
+    var date = mm + "/" + dd + "/" + yyyy;
     // console.log("Send button is pressed");
     // console.log("This is the text " + this.refs.newText.value);
     if (this.refs.newText.value == "") {
@@ -207,8 +228,8 @@ export default class Chat extends React.Component {
         from: UserStore.userrealname,
         message: this.refs.newText.value,
         favourite: false,
-        date: new Date(),
-        time: new Date().getTime(),
+        date: date,
+        time: time,
         //   var d = new Date();
         //   var n = d.getTime();
         picture: UserStore.obj.picture
@@ -318,6 +339,7 @@ export default class Chat extends React.Component {
                   if (Users.from == UserStore.userrealname) {
                     return (
                       <li className="self" key={Users._id}>
+                      <p>{Users._id}</p>
                         <div className="msg" key={Users._id}>
                           <IconMenu
                             key={Users._id}
@@ -333,6 +355,10 @@ export default class Chat extends React.Component {
                           >
                             <MenuItem
                               primaryText="Delete"
+                              onTouchTap={this.handleDelete.bind(this, Users)}
+                            />
+                            <MenuItem
+                              primaryText={Users._id}
                               onTouchTap={this.handleDelete.bind(this, Users)}
                             />
                             <MenuItem

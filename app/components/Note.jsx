@@ -79,7 +79,8 @@ class Note extends React.Component {
     var data = {
       newnote: this.refs.newText.value,
       _id: this.props.children._id,
-      roomId: ChatStore.groupId
+      roomId: ChatStore.groupId,
+      user:this.props.children
     };
     socket.emit("individualnote edit", data);
     this.props.children.text = data.newnote;
@@ -97,7 +98,8 @@ class Note extends React.Component {
   remove() {
     var data = {
       _id: this.props.children._id,
-      roomId: ChatStore.groupId
+      roomId: ChatStore.groupId,
+      user:this.props.children
     };
     socket.emit("note delete", data);
 
@@ -354,14 +356,14 @@ export default class Boards extends React.Component {
       text: text
     });
     socket.on("note messagey", function(msg) {
-      console.log("data[0].noteskkkkkkkkkkkkkkkkkkkkkkk");
+      //  console.log("data[0].noteskkkkkkkkkkkkkkkkkkkkkkk");
 
       ChatStore.notes.push(msg);
       // arr.push(data);
       socket.emit("recieving msgs", ChatStore.groupId);
       socket.on("remaining msgs", function(data) {
         ///   console.log("da");
-        console.log(data[0].notes);
+        // console.log(data[0].notes);
 
         ChatStore.notes = data[0].notes;
       });

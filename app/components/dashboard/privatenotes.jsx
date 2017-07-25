@@ -55,7 +55,6 @@ const muiTheme = getMuiTheme({
 
     //this is for changing the theme
   },
-
   toggle: {
     thumbOnColor: "yellow",
     trackOnColor: "red",
@@ -68,13 +67,6 @@ const muiTheme = getMuiTheme({
 
 const spacing = {
   margin: 12
-};
-const noteName = {
-  fontSize: "0.7rem",
-  left: "0",
-  bottom: "20px",
-  color: "#777",
-  position: "absolute"
 };
 const plusBtn = {
   width: "48px",
@@ -126,10 +118,6 @@ const iconStyles = {
   // marginRight: 24,
   marginLeft: "auto",
   marginRight: "auto"
-};
-const style = {
-  margin: 12,
-  marginRight: 20
 };
 const pinstyle = {
   width: "22px",
@@ -241,6 +229,7 @@ export default class PrivateNotes extends React.Component {
             <Toolbar />
             <br />
             <h2 style={header}>Private Notes</h2>
+
             <br />
             <br />
             <br />
@@ -248,31 +237,34 @@ export default class PrivateNotes extends React.Component {
             <div className="row fullwidth">
               <div className="columns medium-12 large-12">
                 <div style={inlinedisplay}>
-                  <Card className="pdispl" style={cardwidth}>
+                  <Card className="displ" style={cardwidth}>
                     <CardTitle title="Add New Note" subtitle="" />
-<center> <IconButton
+
+                    <IconButton
                       iconStyle={styles.largeIcon}
                       style={styles.large}
                       onTouchTap={this.handleTouchTap}
                     >
                       <HomeIcon style={iconStyles} />
-                    </IconButton></center>
+                    </IconButton>
                   </Card>
 
                   {pnotes.map(Users => {
                     return (
-                      <Card className="pdispl" style={cardwidth}>
-                        <CardTitle title={Users.title}subtitle="" />
+                      <Card className="displ" style={cardwidth}>
+                        <CardTitle
+                          title={Users.title}
+                          subtitle="Card subtitle"
+                        />
                         <CardText>
                           {Users.desc}
                         </CardText>
-                        <center>
-                          <CardActions>
+                        <CardActions>
                           <FlatButton
                             label="Open"
                             onTouchTap={() => this.handleOpen(Users)}
                           />
-                        </CardActions></center>
+                        </CardActions>
                       </Card>
                     );
                   })}
@@ -312,21 +304,19 @@ export default class PrivateNotes extends React.Component {
             <Toolbar />
             <br />
             <h2 style={header}>Private Notes</h2>
+
             <br />
             <br />
-            <div className="container">
-                        <h3>{"Programming"}</h3>
-            </div>
             <br />
             <br />
             <div className="row fullwidth">
               <div className="columns medium-12 large-12">
                 {note.map(Users => {
                   return (
-                    <div className="pdispl">
+                    <div className="">
                       <div
                         className="note"
-                        style={{ backgroundColor: "#dcf8c6",width:"200px",height:"200px" }}
+                        style={{ backgroundColor: "#dcf8c6" }}
                       >
                         <div className="" style={{ display: "inline" }}>
                           {" "}<img
@@ -343,7 +333,7 @@ export default class PrivateNotes extends React.Component {
                                 style={{
                                   display: "inline",
                                   float: "right",
-                                  width: "78px",
+                                  width: "22px",
                                   height: "22px",
                                   padding: "0px"
                                 }}
@@ -363,7 +353,7 @@ export default class PrivateNotes extends React.Component {
                               vertical: "bottom"
                             }}
                           >
-                            <MenuItem 
+                            <MenuItem
                               primaryText="Details"
                               onTouchTap={this.details}
                             />
@@ -388,19 +378,19 @@ export default class PrivateNotes extends React.Component {
                             <Linkifier>
                               {Users.title}
                             </Linkifier>
-                            <time style={noteName}>{Users.time}</time>
                           </p>
+                          <time>{Users.time}</time>&emsp;
                         </Scrollbars>
                       </div>
-                       <div className="fixedbutton">
-          <FloatingActionButton
-            style={style}
-            onTouchTap={this.handleTouchTap}
-            label="yo"
-            onClick={this.add.bind(null, "new note")}
-          >
-            <ContentAdd />
-          </FloatingActionButton>
+                      <div className="fixedbutton">
+                        <FloatingActionButton
+                          // style={style}
+                          // onTouchTap={this.handleTouchTap}
+                          label="yo"
+                          onClick={this.add.bind(null, "new note")}
+                        >
+                          <ContentAdd />
+                        </FloatingActionButton>
                       </div>
                     </div>
                   );
