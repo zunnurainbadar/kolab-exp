@@ -4,6 +4,9 @@ import IconButton from "material-ui/IconButton";
 import MoreVertIcon from "material-ui/svg-icons/navigation/more-vert";
 import IconMenu from "material-ui/IconMenu";
 import AppBar from "material-ui/AppBar";
+import UserStore from "app/store/UserStore.js";
+import FriendshipStore from "app/store/FriendshipsStore.js";
+import Snackbar from "material-ui/Snackbar";
 
 import {
   grey400,
@@ -17,7 +20,10 @@ import NavigationExpandMoreIcon from "material-ui/svg-icons/navigation/expand-mo
 import NavigationClose from "material-ui/svg-icons/navigation/close";
 import MenuItem from "material-ui/MenuItem";
 import AlertContainer from "react-alert";
-
+import ActionInfo from "material-ui/svg-icons/action/account-circle";
+const stylebtn = {
+  margin: 12
+};
 import {
   Toolbar,
   ToolbarGroup,
@@ -38,6 +44,10 @@ const customContentStyle = {
   width: "30%",
   maxWidth: "none"
 };
+const customContentWidthStyle = {
+  width: "45%",
+  maxWidth: "none"
+};
 // const style =
 // {
 // left: '35%',
@@ -45,8 +55,11 @@ const customContentStyle = {
 const styleSearch = {
   left: "20%"
 };
-
+const style = {
+  margin: 12
+};
 let users;
+let favourites;
 
 const iconButtonElement = (
   <IconButton touch={true} tooltip="more" tooltipPosition="bottom-left">
@@ -64,127 +77,352 @@ const iconButtonElement = (
 export default class Chatbar extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { open: false };
+    this.state = {
+      open: false,
+      snackbar: false,
+      openAddUser: false,
+      openDialog: false,
+      openRemoveAdmin: false,
+      snackbarremove: false,
+      openAdmin: false
+    };
   }
+  componentDidMount() {
+    let userid = localStorage.getItem("userid");
 
+    $.ajax({
+      type: "GET",
+      url: "/api/userall"
+    }).done(function(data) {
+      // console.log(data)
+      users = data;
+      var index = users.findIndex(function(o) {
+        return o.user_id === userid;
+      });
+      users.splice(index, 1);
+      UserStore.allUsers = users;
+      // var array = [];
+      var secondarray = [];
+      users.forEach(function(a) {
+        for (var i = 0; i < FriendshipStore.myfriendslist.length; i++) {
+          //console.log(FriendshipStore.myfriendslist.length);
+          if (
+            a.user_id == FriendshipStore.myfriendslist[i].other_id ||
+            a.user_id == FriendshipStore.myfriendslist[i].user_id
+          ) {
+            // array[i] = a.user_id;
+            secondarray[i] = {
+              picture: a.picture,
+              name: a.name,
+              user_id: a.user_id
+            };
+          } else {
+          }
+        }
+      });
+      // console.log("array");
+      // console.log(array);
+      // console.log(secondarray);
+      FriendshipStore.mappedFriends = secondarray;
+    });
+  }
   handleOpen = () => {
     this.setState({ open: true });
+  };
+  handleRequestClose = () => {
+    this.setState({ snackbar: false });
+  };
+  handleRequestSnackbarClose = () => {
+    this.setState({ snackbarremove: false });
+  };
+  handleShowFav = () => {
+    var data = ChatStore.groupId;
+    socket.emit("Show Favourites", data);
+
+    socket.on("returned favs", function(data) {
+      // console.log(data.msg);
+      ChatStore.favourites = data.msg;
+    });
+    this.setState({ openDialog: true });
+  };
+  handleAdmin = () => {
+    this.setState({ openAdmin: true });
+  };
+  handleRemoveAdmin = () => {
+    this.setState({ openRemoveAdmin: true });
   };
 
   handleClose = () => {
     this.setState({ open: false });
   };
+  handleAdminClose = () => {
+    this.setState({ openAdmin: false });
+  };
+  handleRemoveAdminClose = () => {
+    this.setState({ openRemoveAdmin: false });
+  };
+  handleCloseFav = () => {
+    this.setState({ openDialog: false });
+  };
+  _handleClick = Users => {
+    this.setState({ openAddUser: true });
+    // console.log(Users);
+    ChatStore.addUser = Users;
+  };
+
+  _handleRemoveClick = Users => {
+    this.setState({ openRemoveUser: true });
+    // console.log(Users);
+    ChatStore.removeUser = Users;
+  };
+  handleAddUserClose = () => {
+    this.setState({ openAddUser: false });
+  };
+  handleRemoveUserClose = () => {
+    this.setState({ openRemoveUser: false });
+  };
+  handleAddtoGroup = () => {
+    this.setState({ snackbar: true });
+
+    var user = ChatStore.addUser;
+    var data = {
+      user_id: user.user_id,
+      name: user.name,
+      picture: user.picture,
+      roomId: ChatStore.groupId,
+      roomName: ChatStore.groupname,
+      pic: ChatStore.groupavatar, //GROUP PIC
+      notes_count: ChatStore.totalmsgscount,
+      msgs_count: ChatStore.totalnotescount,
+      from: UserStore.userrealname,
+      message: "HAS BEEN ADDED TO THE GROUP"
+    };
+    socket.emit("add User to Group", data);
+    socket.on("returning participants", function(data) {
+      ChatStore.remainparticipants = data[0].remainparticipants;
+      ChatStore.participants = data[0].participants;
+    });
+    socket.on("returning message group", function(data) {
+      ChatStore.msgs = data[0].conversation;
+    });
+    var newarray = FriendshipStore.mappedFriends;
+    var mappedlength = FriendshipStore.mappedFriends.length;
+    var remain = ChatStore.remainparticipants;
+
+    for (var i = 0; i < newarray.length; i++) {
+      if (FriendshipStore.mappedFriends[i].user_id === data.user_id) {
+        // result = array[i];
+        FriendshipStore.mappedFriends[i].present = true;
+        break;
+      }
+    }
+
+    this.setState({ openAddUser: false });
+  };
+
+  handleRemovetoGroup = () => {
+    this.setState({ snackbarremove: true });
+
+    var user = ChatStore.removeUser;
+    var data = {
+      user_id: user.user_id,
+      roomId: ChatStore.groupId,
+      message: "HAS BEEN REMOVED FROM THE GROUP",
+      from: user.name,
+      picture: user.picture
+    };
+    socket.emit("remove User from Group", data);
+
+    socket.on("returning participants", function(data) {
+      ChatStore.remainparticipants = data[0].remainparticipants;
+      ChatStore.participants = data[0].participants;
+    });
+    // socket.emit("returning message group", docs);
+
+    socket.on("returning message group", function(data) {
+      ChatStore.msgs = data[0].conversation;
+    });
+
+    this.setState({ openRemoveUser: false });
+  };
+
   SendFile = () => {
     var data, xhr;
 
     data = new FormData();
     data.append("file", $("#file")[0].files[0]);
     console.log(data);
-    // xhr = new XMLHttpRequest();
-
-    // xhr.open("POST", "/upload", true);
-    // xhr.onreadystatechange = function(response) {};
-    // xhr.send(data);
-    // var data = new FormData();
-    // var fd = new FormData();
-    // fd.append("file", input.files[0]);
-    // $.ajax({
-    //   url: "/file/send",
-    //   data: fd,
-    //   processData: false,
-    //   contentType: false,
-    //   type: "POST",
-    //   success: function(data) {
-    //     alert(data);
-    //   }
-    // });
-    // var imagedata = document.querySelector('input[type="file"]').files[0];
-    // data.append("data", imagedata);
-    // console.log(data);
-    // $.ajax({
-    //   method: "POST",
-    //   url: "/file/send",
-    //   data: data,
-    //   cache: false,
-    //   processData: false,
-    //   contentType: false
-    // })
-    //   .done(data => {
-    //     //resolve(data);
-    //   })
-    //   .fail(err => {
-    //     //console.log("errorrr for file upload", err);
-    //     //reject(err);
-    //   });
   };
 
   render() {
-    users = ChatStore.participants;
+    var groupSelected;
+    var admin;
+    // var admin_id = ChatStore.admin_id;
+    if (ChatStore.groupname == " ") {
+      groupSelected = true;
+    } else false;
+
+    if (ChatStore.admin_id == UserStore.obj.user_id) {
+      admin = true;
+    } else false;
+
+    // users = ChatStore.participants;
+    // favourites = ChatStore.favourites.msgs;
     const rightIconMenu = (
       <IconMenu iconButtonElement={iconButtonElement}>
         <MenuItem onTouchTap={this.handleOpen}>Group Info</MenuItem>
+        <MenuItem onTouchTap={this.handleShowFav}>Show Favourites</MenuItem>
+        {admin
+          ? <MenuItem onTouchTap={this.handleAdmin}>Add More Users</MenuItem>
+          : <div />}
+        {admin
+          ? <MenuItem onTouchTap={this.handleRemoveAdmin}>
+              Remove Users
+            </MenuItem>
+          : <div />}
       </IconMenu>
     );
 
+    const actionsAdd = [
+      <RaisedButton
+        label="Cancel"
+        onTouchTap={this.handleAddUserClose}
+        style={stylebtn}
+      />,
+      <RaisedButton
+        primary={true}
+        label="Add to Group"
+        onTouchTap={this.handleAddtoGroup}
+      />
+    ];
+
+    const actionsRemove = [
+      <RaisedButton
+        label="Cancel"
+        onTouchTap={this.handleRemoveUserClose}
+        style={stylebtn}
+      />,
+      <RaisedButton
+        secondary={true}
+        label="Remove from Group"
+        onTouchTap={this.handleRemovetoGroup}
+      />
+    ];
+
     return (
       <div>
+        <Snackbar
+          open={this.state.snackbar}
+          message="User has been added to the group"
+          autoHideDuration={2500}
+          onRequestClose={this.handleRequestClose}
+        />
+        <Snackbar
+          open={this.state.snackbarremove}
+          message="User has been removed from the group"
+          autoHideDuration={2500}
+          onRequestClose={this.handleRequestSnackbarClose}
+        />
+
         <Dialog
           modal={false}
           overlay={false}
-          onRequestClose={this.handleClose}
-          contentStyle={customContentStyle}
-          open={this.state.open}
+          onRequestClose={this.handleAdminClose}
+          contentStyle={customContentWidthStyle}
+          open={this.state.openAdmin}
         >
-          <h5>Users in the group:</h5>
+          <h5>Add more friends</h5>
           <br />
-          {users.map(Users => {
-            return (
-              <div key={Users.user_id}>
-                <div className="" key={Users.user_id}>
+          <br />
+          {FriendshipStore.mappedFriends.map(Users => {
+            if (Users.present != true) {
+              return (
+                <div key={Users.user_id}>
                   <ListItem
+                    disabled={true}
                     key={Users.user_id}
-                    leftAvatar={
-                      <Avatar size={40} src={Users.picture}>
-                        {Users.pic}
-                      </Avatar>
-                    }
+                    leftAvatar={<Avatar size={40} src={Users.picture} />}
                     primaryText={Users.name}
-                  />
+                    rightIconButton={
+                      <RaisedButton
+                        label={"Add To Group"}
+                        primary={true}
+                        key={Users.user_id}
+                        onTouchTap={() => this._handleClick(Users)}
+                        style={style}
+                      />
+                    }
+                  />{" "}
+                  <br />
                 </div>
-              </div>
-            );
+              );
+            }
+          })}
+        </Dialog>
+      
+        <Dialog
+          title="Add User"
+          actions={actionsAdd}
+          modal={false}
+          open={this.state.openAddUser}
+          onRequestClose={this.handleAddUserClose}
+        >
+          Are you sure you want to Remove the user?
+        </Dialog>{" "}
+        <Dialog
+          title="Remove User"
+          actions={actionsRemove}
+          modal={false}
+          open={this.state.openRemoveUser}
+          onRequestClose={this.handleRemoveUserClose}
+        >
+          Are you sure you want to Add the user?
+        </Dialog>{" "}
+        <Dialog
+          modal={false}
+          overlay={false}
+          onRequestClose={this.handleCloseFav}
+          contentStyle={customContentStyle}
+          open={this.state.openDialog}
+          autoScrollBodyContent={true}
+        >
+          <h5>Favourites in the group:</h5>
+          <br />
+
+          {ChatStore.favourites.map(Users => {
+            if (Users.favourite == true)
+              return (
+                <div key={Users.user_id}>
+                  <div className="" key={Users.user_id}>
+                    {Users.message}&emsp;&emsp;
+                    <br />
+                    {Users.from}&emsp;&emsp;
+                    {Users.time}
+                  </div>
+                  <br />
+                </div>
+              );
           })}
           <br />
         </Dialog>
         <Toolbar>
-          <ToolbarGroup firstChild={true}>
-            <List>
-              <ListItem
-                onTouchTap={this.handleOpen}
-                leftAvatar={
-                  <Avatar size={40} color={darkBlack}>
-                    {ChatStore.groupavatar}
-                  </Avatar>
-                }
-                primaryText={ChatStore.groupname}
-              />
-            </List>
-          </ToolbarGroup>
-
-          {/*<ToolbarGroup>
-      		<button><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M13 14c0 2.21-1.79 4-4 4s-4-1.79-4-4V3c0-1.66 1.34-3 3-3s3 1.34 3 3v9c0 1.1-.9 2-2 2s-2-.9-2-2V4h1v8c0 .55.45 1 1 1s1-.45 1-1V3c0-1.1-.9-2-2-2s-2 .9-2 2v11c0 1.66 1.34 3 3 3s3-1.34 3-3V4h1v10z"/></svg></button>
-         <button ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
-          // <form method="post" action="saveBlog" enctype="multipart/form-data">
-          //   <input type="file" name="myImage" />
-          //   <input type="submit" name="submit" />
-          // </form>
-
-        </ToolbarGroup>*/}
+          {groupSelected
+            ? <div />
+            : <ToolbarGroup firstChild={true}>
+                <List>
+                  <ListItem
+                    onTouchTap={this.handleOpen}
+                    leftAvatar={
+                      <Avatar size={40} color={darkBlack}>
+                        {ChatStore.groupavatar}
+                      </Avatar>
+                    }
+                    primaryText={ChatStore.groupname}
+                  />
+                </List>
+              </ToolbarGroup>}
 
           <ToolbarGroup lastChild={true} style={bottomPadding}>
-            {/*<IconButton tooltip="top-center" touch={true} tooltipPosition="top-center">
-      <ActionGrade />
-    </IconButton>*/}
             <ListItem rightIconButton={rightIconMenu} />
           </ToolbarGroup>
         </Toolbar>
@@ -193,43 +431,98 @@ export default class Chatbar extends React.Component {
   }
 }
 
-// <form
-//           ref="uploadForm"
-//           id="uploadForm"
-//           a`c`tion="http://localhost:3000/upload"
-//           method="post"
-//           encType="multipart/form-data"
-//         >
-//           <input type="file" name="sampleFile" />
-//           <input type="submit" value="Upload!" />
-//         </form>
-//  <ToolbarGroup style={styleSearch}>
-//           <IconButton
-//             tooltip="search..."
-//             touch={true}
-//             tooltipPosition="bottom-center"
-//           >
-//             <svg
-//               xmlns="http://www.w3.org/2000/svg"
-//               width="24"
-//               height="24"
-//               viewBox="0 0 24 24"
-//             >
-//               <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-//             </svg>
-//           </IconButton>
-//           <IconButton
-//             tooltip="add attachment"
-//             touch={true}
-//             tooltipPosition="bottom-center"
-//           >
-//             <svg
-//               xmlns="http://www.w3.org/2000/svg"
-//               width="18"
-//               height="18"
-//               viewBox="0 0 18 18"
-//             >
-//               <path d="M13 14c0 2.21-1.79 4-4 4s-4-1.79-4-4V3c0-1.66 1.34-3 3-3s3 1.34 3 3v9c0 1.1-.9 2-2 2s-2-.9-2-2V4h1v8c0 .55.45 1 1 1s1-.45 1-1V3c0-1.1-.9-2-2-2s-2 .9-2 2v11c0 1.66 1.34 3 3 3s3-1.34 3-3V4h1v10z" />
-//             </svg>
-//           </IconButton>
-//         </ToolbarGroup>
+        // <Dialog
+        //   modal={false}
+        //   overlay={false}
+        //   onRequestClose={this.handleClose}
+        //   contentStyle={customContentStyle}
+        //   open={this.state.open}
+        // >
+        //   <h5>Users in the group:</h5>
+        //   <br />
+        //   {ChatStore.remainparticipants.map(Users => {
+        //     if (Users.user_id == ChatStore.admin_id) {
+        //       return (
+        //         <div key={Users.user_id}>
+        //           <div className="" key={Users.user_id}>
+        //             <ListItem
+        //               key={Users.user_id}
+        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
+        //               primaryText={Users.name}
+        //               rightIcon={<ActionInfo />}
+        //             />
+        //           </div>
+        //         </div>
+        //       );
+        //     } else {
+        //       return (
+        //         <div key={Users.user_id}>
+        //           <div className="" key={Users.user_id}>
+        //             <ListItem
+        //               key={Users.user_id}
+        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
+        //               primaryText={Users.name}
+        //             />
+        //           </div>
+        //         </div>
+        //       );
+        //     }
+        //   })}
+        //   <br />
+        //   <h5>
+        //     Created on {ChatStore.created_on}
+        //   </h5>
+        // </Dialog>
+
+
+        //   <Dialog
+        //   modal={false}
+        //   overlay={false}
+        //   onRequestClose={this.handleRemoveAdminClose}
+        //   contentStyle={customContentWidthStyle}
+        //   open={this.state.openRemoveAdmin}
+        // >
+        //   <h5>Remove User from the group</h5>
+
+        //   <br />
+        //   {ChatStore.remainparticipants.map(Users => {
+        //     if (Users.user_id == ChatStore.admin_id) {
+        //       return (
+        //         <div key={Users.user_id}>
+        //           <div className="" key={Users.user_id}>
+        //             <ListItem
+        //               key={Users.user_id}
+        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
+        //               primaryText={Users.name}
+        //               disabled={true}
+        //               rightIcon={<ActionInfo />}
+        //             />
+        //           </div>
+        //         </div>
+        //       );
+        //     } else {
+        //       return (
+        //         <div key={Users.user_id}>
+        //           <div className="" key={Users.user_id}>
+        //             <ListItem
+        //               disabled={true}
+        //               key={Users.user_id}
+        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
+        //               primaryText={Users.name}
+        //               rightIconButton={
+        //                 <RaisedButton
+        //                   label={"Remove From Group"}
+        //                   secondary={true}
+        //                   key={Users.user_id}
+        //                   onTouchTap={() => this._handleRemoveClick(Users)}
+        //                   style={style}
+        //                 />
+        //               }
+        //             />
+        //           </div>
+        //         </div>
+        //       );
+        //     }
+        //   })}
+        //   <br />
+        // </Dialog>

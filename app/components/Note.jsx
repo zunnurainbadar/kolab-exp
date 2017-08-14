@@ -79,8 +79,7 @@ class Note extends React.Component {
     var data = {
       newnote: this.refs.newText.value,
       _id: this.props.children._id,
-      roomId: ChatStore.groupId,
-      user:this.props.children
+      roomId: ChatStore.groupId
     };
     socket.emit("individualnote edit", data);
     this.props.children.text = data.newnote;
@@ -88,6 +87,15 @@ class Note extends React.Component {
       editing: false,
       open: false
     });
+    var data = {
+      user_id: UserStore.obj.user_id,
+      _id: ChatStore.groupId,
+      count: ChatStore.notes,
+      participants: ChatStore.participants
+
+      //ChatStore.readcount = Object.keys(data[0].conversation).length;
+    };
+    socket.emit("readnotes edit", data);
   }
   details() {
     UIStore.notedetails = true;
@@ -98,18 +106,23 @@ class Note extends React.Component {
   remove() {
     var data = {
       _id: this.props.children._id,
-      roomId: ChatStore.groupId,
-      user:this.props.children
+      roomId: ChatStore.groupId
     };
     socket.emit("note delete", data);
 
+    var data1 = {
+      user_id: UserStore.obj.user_id,
+      _id: ChatStore.groupId,
+      count: ChatStore.notes,
+      participants: ChatStore.participants
+
+      //ChatStore.readcount = Object.keys(data[0].conversation).length;
+    };
+    socket.emit("readnotes delete", data1);
     socket.on("remainingnotes", function(data) {
-      console.log("da");
-      console.log(data[0].notes);
-      // var a = data[0].from;
-      // console.log(data[0].from);
-      // b = a.split(/\s(.+)/)[0]; //everything before the first space
-      // data.firstname = b;
+      // console.log("da");
+      // console.log(data[0].notes);
+
       ChatStore.notes = data[0].notes;
     });
     // this.props.onRemove(this.props.index);
@@ -344,6 +357,7 @@ export default class Boards extends React.Component {
     // socket.emit("addingnotes", data);
     // arr.push(data);
     ChatStore.notes.push(data);
+    console.log('Note pushed');
     // socket.on("roomNotes", function(data) {
 
     // });
@@ -357,18 +371,23 @@ export default class Boards extends React.Component {
     });
     socket.on("note messagey", function(msg) {
       //  console.log("data[0].noteskkkkkkkkkkkkkkkkkkkkkkk");
-
+      console.log('This is notes ',msg);
+       if(chatstore.notes[chatstore.notes.length - 1].from != msg.from ||chatstore.notes[chatstore.notes.length - 1].text != msg.text || chatstore.notes[chatstore.notes.length - 1].date != msg.date || chatstore.notes[chatstore.notes.length - 1].time != msg.time)
+{
+    console.log('Note pushed messagy');
       ChatStore.notes.push(msg);
+}else{
+console.log('Note is already pushed');
+}
       // arr.push(data);
-      socket.emit("recieving msgs", ChatStore.groupId);
-      socket.on("remaining msgs", function(data) {
-        ///   console.log("da");
-        // console.log(data[0].notes);
-
-        ChatStore.notes = data[0].notes;
-      });
     });
+    socket.emit("recieving msgs", ChatStore.groupId);
+    socket.on("remaining msgs", function(data) {
+      ///   console.log("da");
+      // console.log(data[0].notes);
 
+      ChatStore.notes = data[0].notes;
+    });
     var data = {
       user_id: UserStore.obj.user_id,
       _id: ChatStore.groupId,
@@ -441,6 +460,10 @@ export default class Boards extends React.Component {
     UIStore.notedetails = false;
   };
   render() {
+    var groupSelected;
+    if (ChatStore.groupname == " ") {
+      groupSelected = true;
+    } else false;
     var variable = ChatStore.notes;
     // console.log("variable");
     // va = ChatStore.individualnote;
@@ -502,14 +525,17 @@ export default class Boards extends React.Component {
         })}
 
         <div className="fixedbutton">
-          <FloatingActionButton
-            style={style}
-            onTouchTap={this.handleTouchTap}
-            label="yo"
-            onClick={this.add.bind(null, "new note")}
-          >
-            <ContentAdd />
-          </FloatingActionButton>
+          {groupSelected
+            ? <div />
+            : <FloatingActionButton
+                style={style}
+                onTouchTap={this.handleTouchTap}
+                label="yo"
+                onClick={this.add.bind(null, "new note")}
+              >
+                <ContentAdd />
+              </FloatingActionButton>}
+
           <Dialog
             modal={false}
             overlay={false}
@@ -536,7 +562,7 @@ export default class Boards extends React.Component {
             <br />
           </Dialog>
           <Snackbar
-            open={this.state.open}
+            open={this.state.openasds}
             message="New Note Added"
             autoHideDuration={1200}
           />

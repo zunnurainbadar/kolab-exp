@@ -11,6 +11,9 @@ import Toolbar from "app/components/toolbar.jsx";
 import Boards from "app/components/Note.jsx";
 import List from "material-ui/List/List";
 import Avatar from "material-ui/Avatar";
+import FriendshipStore from "app/store/FriendshipsStore.js";
+import Dialog from "material-ui/Dialog";
+import Snackbar from "material-ui/Snackbar";
 
 import ListItem from "material-ui/List/ListItem";
 // import Main from "app/components/main.jsx"
@@ -28,7 +31,13 @@ import { Scrollbars } from "react-custom-scrollbars";
 
 import SearchInput, { createFilter } from "react-search-input";
 
-const KEYS_TO_FILTERS = ["email", "name", "nickname", "other_id_name"];
+const KEYS_TO_FILTERS = [
+  "email",
+  "name",
+  "nickname",
+  "other_id_name",
+  "user_id_name"
+];
 
 const muiTheme = getMuiTheme({
   palette: {
@@ -67,7 +76,9 @@ export default class FriendList extends React.Component {
     super(props);
     this.state = {
       searchTerm: "",
-      yay: true
+      yay: true,
+      snackbarsendreq: false,
+      openDelete: false
     };
   }
 
@@ -78,6 +89,8 @@ export default class FriendList extends React.Component {
     })
       .done(function(data) {
         friendlist = data;
+        FriendshipsStore.mylist = data;
+
         // console.log("meri friendlist");
         // console.log(data);
         friendlistcount = Object.keys(friendlist).length;
@@ -92,27 +105,47 @@ export default class FriendList extends React.Component {
     this.setState({ searchTerm: term });
   }
 
-  _handleClick(id) {
-    // console.log(id);
-    alert(id);
+  _handleClick = Friendship => {
+    // console.log(Friendship);
 
     var data = {
       user_id: UserStore.obj.user_id,
-      other_id: id
+      other_id: Friendship.other_id
     };
-    // Submit form via jQuery/AJAX
+    this.setState({ openDelete: true });
+
+    FriendshipStore.removefriendlistfriend = data;
+  };
+  handleUnfriend = () => {
+    var data = FriendshipStore.removefriendlistfriend;
+    socket.emit("unfriend friendlist", data);
+
     $.ajax({
-      type: "POST",
-      url: "/api/user/removefriend",
-      data: data
+      type: "GET",
+      url: "/api/user/friendlist"
     })
       .done(function(data) {
-        alert("its all over");
+        friendlist = data;
+        FriendshipsStore.mylist = data;
+        // console.log("meri friendlist");
+        // console.log(data);
+        friendlistcount = Object.keys(friendlist).length;
+        FriendshipsStore.friendlistcount = friendlistcount;
+        // console.log(friendlistcount);
       })
       .fail(function(jqXhr) {
-        // console.log("failed to register POST REQ");
+        console.log("friendlist request fail");
       });
-  }
+    this.setState({ snackbarsendreq: true });
+
+    this.setState({ openDelete: false });
+  };
+  handleDeleteClose = () => {
+    this.setState({ openDelete: false });
+  };
+  handleRequestClose = () => {
+    this.setState({ snackbarsendreq: false });
+  };
 
   render() {
     // setTimeout(
@@ -123,8 +156,19 @@ export default class FriendList extends React.Component {
     //   }.bind(this),
     //   7000
     // );
-
-    const filteredEmails = friendlist.filter(
+    const actionsDelete = [
+      <RaisedButton
+        label="Cancel"
+        onTouchTap={this.handleDeleteClose}
+        style={style}
+      />,
+      <RaisedButton
+        label="Unfriend the User"
+        secondary={true}
+        onTouchTap={this.handleUnfriend}
+      />
+    ];
+    const filteredEmails = FriendshipsStore.mylist.filter(
       createFilter(this.state.searchTerm, KEYS_TO_FILTERS)
     );
 
@@ -150,9 +194,25 @@ export default class FriendList extends React.Component {
                 onChange={this.searchUpdated.bind(this)}
               />
               <br />
+              <Dialog
+                title="Unfriend the User"
+                actions={actionsDelete}
+                modal={false}
+                open={this.state.openDelete}
+                onRequestClose={this.handleDeleteClose}
+              >
+                Are you sure you want to Unfriend? This action cannot be
+                reversed.
+              </Dialog>
+              <Snackbar
+                open={this.state.snackbarsendreq}
+                message="Friend has been removed"
+                autoHideDuration={2500}
+                onRequestClose={this.handleRequestClose}
+              />
 
               <Scrollbars
-                style={{ height: 300 }}
+                style={{ height: 380 }}
                 renderTrackHorizontal={props =>
                   <div
                     {...props}
@@ -169,18 +229,19 @@ export default class FriendList extends React.Component {
                 {filteredEmails.map(Friendlist => {
                   var id;
                   if (Friendlist.user_id == UserStore.obj.user_id) {
+                    // console.log(Friendlist.user_id);
                     id = Friendlist.other_id;
 
                     return (
-                      <div className="mail" key={Friendlist.user_id}>
-                        <List key={Friendlist.user_id}>
+                      <div className="mail" key={Friendlist.other_id}>
+                        <List key={Friendlist.other_id}>
                           <ListItem
-                            key={Friendlist.user_id}
+                            key={Friendlist.other_id}
                             disabled={true}
                             leftAvatar={
                               <Avatar
                                 size={80}
-                                key={Friendlist.user_id}
+                                key={Friendlist.other_id}
                                 src={Friendlist.picture}
                               />
                             }
@@ -188,7 +249,7 @@ export default class FriendList extends React.Component {
                               <RaisedButton
                                 label={"Remove Friend"}
                                 secondary={true}
-                                onTouchTap={() => this._handleClick(id)}
+                                onTouchTap={() => this._handleClick(Friendlist)}
                                 style={style}
                               />
                             }

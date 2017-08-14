@@ -57,7 +57,8 @@ export default class NewChatDrawer extends React.Component {
     this.state = {
       open: false,
       snackbaropen: false,
-      searchTerm: ""
+      searchTerm: "",
+      buttonStatus: false
     };
     this.logChange = this.logChange.bind(this);
     this.handleRequestDelete = this.handleRequestDelete.bind(this);
@@ -75,11 +76,17 @@ export default class NewChatDrawer extends React.Component {
       time: 2000,
       type: "error"
     });
+    this.setState({
+      buttonStatus: false
+    });
   };
   showSecondAlert = () => {
     this.msg.show("No User has been added", {
       time: 2000,
       type: "error"
+    });
+    this.setState({
+      buttonStatus: false
     });
   };
   // handleToggle = () => this.setState({ open: !this.state.open });
@@ -93,6 +100,9 @@ export default class NewChatDrawer extends React.Component {
   };
   Next = () => {
     //error handling here
+    this.setState({
+      buttonStatus: true
+    });
     if (this.refs.groupname.getInputNode().value == "" || mapping.length == 0) {
       // console.log("mapping at imp time");
       // console.log(mapping.length);
@@ -117,42 +127,44 @@ export default class NewChatDrawer extends React.Component {
       var avatarletter = avatarletterlower.toUpperCase();
       // console.log(avatarletter);
       // console.log("mapping.length" + mapping.length);
+      var today = new Date();
+      var dd = today.getDate();
+      var mm = today.getMonth() + 1; //January is 0!
+      var yyyy = today.getFullYear();
+
+      if (dd < 10) {
+        dd = "0" + dd;
+      }
+      if (mm < 10) {
+        mm = "0" + mm;
+      }
+      var date = dd + "-" + mm + "-" + yyyy;
       var data = {
         id: UserStore.obj.user_id,
         groupname: this.refs.groupname.getValue(),
         avatarletter: avatarletter,
-        mapping: JSON.stringify(mapping)
+        mapping: JSON.stringify(mapping),
+        created_on: date
       };
 
-      $.ajax({
-        type: "POST",
-        url: "/api/createGroup",
-        data: data
-      })
-        .done(function(data) {
-          alert("its all over");
+      // $.ajax({
+      //   type: "POST",
+      //   url: "/api/createGroup",
+      //   data: data
+      // })
+      //   .done(function(data) {
+      //     alert("its all over");
+      //     // console.log(data);
+      //   })
+      //   .fail(function(jqXhr) {
+      //     // console.log("failed to register POST REQ");
+      //   });
+      socket.emit("create group event", data);
 
-          // var newdata = UserStore.obj.user_id;
-          // socket.emit("newdata", newdata);
-          // socket.on("remaininggroups", function(data) {
-          //   console.log("data[0].rooms");
-          //   console.log(data[0].rooms);
-          //   UserStore.obj.rooms = data[0].rooms;
-          // });
-          // socket.on("remainingchatlist", function(data) {
-          //   // console.log("da");
-          //   //console.log(data[0].rooms);
-
-          //   UserStore.obj.rooms = data[0].rooms;
-          // });
-        })
-        .fail(function(jqXhr) {
-          // console.log("failed to register POST REQ");
-        });
       this.setState({
         snackbaropen: true
       });
-
+      // console.log(data);
       setTimeout(
         function() {
           UIStore.newchatdrawer = false;
@@ -161,8 +173,6 @@ export default class NewChatDrawer extends React.Component {
           var newdata = UserStore.obj.user_id;
           socket.emit("newdata", newdata);
           socket.on("remaininggroups", function(data) {
-            // console.log("data[0].rooms");
-            // console.log(data[0].rooms);
             UserStore.obj.rooms = data[0].rooms;
           });
           socket.on("remainingchatlist", function(data) {
@@ -171,7 +181,8 @@ export default class NewChatDrawer extends React.Component {
 
           this.refs.groupname.getInputNode().value = "";
           this.setState({
-            snackbaropen: false
+            snackbaropen: false,
+            buttonStatus: false
           });
         }.bind(this),
         2000
@@ -389,6 +400,7 @@ export default class NewChatDrawer extends React.Component {
           />
           <div className="center-block" style={{ display: "table" }}>
             <RaisedButton
+              disabled={this.state.buttonStatus}
               className="center-block"
               label={"Create Group"}
               labelPosition="before"

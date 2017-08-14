@@ -12,6 +12,14 @@ var roomsSchema = new Schema({
     default: "",
     trim: true
   },
+  admin_id: {
+    type: String,
+    default: ""
+  },
+  created_on: {
+    type: String,
+    default: ""
+  },
 
   conversation: [
     {
@@ -31,7 +39,8 @@ var roomsSchema = new Schema({
       time: String
     }
   ],
-  participants: [{}]
+  participants: [{}],
+  remainparticipants: [{}]
 });
 
 // groupListSchema.index({ "user_id": 1, "other_id": 1 }, { "unique": true });

@@ -81,7 +81,7 @@ export default class Events extends React.Component {
   constructor(props) {
     super(props);
 
-    EventStore.event = [{ title: "" }];
+    // EventStore.event = [{ title: "" }];
     this.state = {
       expanded: false,
       open: false,
@@ -111,7 +111,7 @@ export default class Events extends React.Component {
       user_name: UserStore.userrealname
     };
 
-    console.log(data);
+    // console.log(data);
     $.ajax({
       type: "POST",
       url: "/api/user/createevent",
@@ -130,7 +130,7 @@ export default class Events extends React.Component {
       url: "/api/getEvents"
     })
       .done(function(data) {
-        console.log(data);
+        // console.log(data);
         EventStore.event = data;
         totalEvents = data;
 
@@ -199,7 +199,7 @@ export default class Events extends React.Component {
       url: "/api/getEvents"
     })
       .done(function(data) {
-        console.log(data);
+        // console.log(data);
         EventStore.event = data;
         totalEvents = data;
 
@@ -209,13 +209,16 @@ export default class Events extends React.Component {
         console.log("failed to register");
       });
   };
+  componentWillMount() {
+    EventStore.event = [];
+  }
   componentDidMount() {
     $.ajax({
       type: "GET",
       url: "/api/getEvents"
     })
       .done(function(data) {
-        console.log(data);
+        // console.log(data);
         EventStore.event = data;
         totalEvents = data;
 
@@ -282,7 +285,7 @@ export default class Events extends React.Component {
             </Dialog>
             <div className="row">
               <div className="col-xs-12 col-md-12 col-lg-12">
-                {totalEvents.map(event => {
+                {EventStore.event.map(event => {
                   if (event.user_name == UserStore.userrealname) {
                     return (
                       <div key={event._id}>

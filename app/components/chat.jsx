@@ -23,6 +23,7 @@ import Dialog from "material-ui/Dialog";
 
 import IconMenu from "material-ui/IconMenu";
 import MenuItem from "material-ui/MenuItem";
+import chatstore from '../store/ChatStore';
 // var socket;
 var today;
 var msgs;
@@ -68,6 +69,33 @@ const starcolor = {
 const inputBoxStyle = {
   width: "100%"
 };
+const leftGroup = {
+  textAlign: "center",
+  fontStyle: "italic",
+  fontSize: "16px",
+  color: "#F44336",
+  fontWeight: "bold",
+  paddingLeft: "10px",
+  paddingRight: "10px"
+};
+const hasbeenadded = {
+  textAlign: "center",
+  fontStyle: "italic",
+  fontSize: "16px",
+  color: "#00E676",
+  fontWeight: "bold",
+  paddingLeft: "10px",
+  paddingRight: "10px"
+};
+const hasbeenremoved = {
+  textAlign: "center",
+  fontStyle: "italic",
+  fontSize: "16px",
+  color: "#F44336",
+  fontWeight: "bold",
+  paddingLeft: "10px",
+  paddingRight: "10px"
+};
 
 const fixedPosition = {
   margin: 12,
@@ -82,11 +110,13 @@ const heightchat = {
   height: "100%"
   // backgroundColor: "#EDF8F5"
 };
+ var count = 0;
 @observer
 export default class Chat extends React.Component {
   constructor(props) {
     super(props);
     this.sendMsg = this.sendMsg.bind(this);
+         
     // socket = io.connect();
     this.scrollToBottom = this.scrollToBottom.bind(this);
 
@@ -98,7 +128,8 @@ export default class Chat extends React.Component {
       ChatStore.msgs = data[0].conversation;
     });
     this.state = {
-      status: false
+      status: false,
+      showfav: false
     };
   }
   componentWillReceiveProps(nextProps) {
@@ -162,27 +193,31 @@ export default class Chat extends React.Component {
     });
     socket.on("remainingmsgs", function(data) {
       ///   console.log("da");
-      console.log(data[0].conversation);
+      // console.log(data[0].conversation);
 
       ChatStore.msgs = data[0].conversation;
     });
   };
   handleDelete = Users => {
     // alert(Users._id);
-        console.log('This is users._id '+ Users._id);
-    console.log('THis is Users '+ JSON.stringify(Users));
     var data = {
       _id: Users._id,
-      roomId: ChatStore.groupId,
-      user:Users
+      roomId: ChatStore.groupId
     };
 
     socket.emit("msg delete", data);
 
-    socket.on("remainingmsgs", function(data) {
-      console.log("da");
-      console.log(data[0].conversation);
+    var data1 = {
+      user_id: UserStore.obj.user_id,
+      _id: ChatStore.groupId,
+      count: ChatStore.msgs.length,
+      participants: ChatStore.participants
+    };
+    socket.emit("readcount delete", data1);
 
+    // socket.emit("readcount send", data1);
+
+    socket.on("remainingmsgs", function(data) {
       ChatStore.msgs = data[0].conversation;
     });
   };
@@ -190,10 +225,32 @@ export default class Chat extends React.Component {
   handleDetails = Users => {
     Store.msgdetails = true;
     ChatStore.individualmsg = Users;
-            console.log('This is users._id in detail '+ Users._id);
+  };
+  handleNote = Users => {
+    // Store.msgdetails = true;
+    // ChatStore.individualmsg = Users;
+    // console.log(Users);
+    var data = {
+      roomId: ChatStore.groupId,
+      from: Users.from,
+      text: Users.message,
+      date: Users.date,
+      time: Users.time
+    };
+    socket.emit("addnote", data);
+    // ChatStore.notes.push(data);
+    socket.emit("recieving msgs", ChatStore.groupId);
+    socket.on("remaining msgs", function(data) {
+      ChatStore.notes = data[0].notes;
+    });
   };
   handleClose = () => {
     Store.msgdetails = false;
+  };
+  handleCloseFav = () => {
+    this.setState({
+      showfav: false
+    });
   };
   // renderView = () => {
   //   // this.refs.scrollbars.scrollToTop();
@@ -225,85 +282,93 @@ export default class Chat extends React.Component {
     if (this.refs.newText.value == "") {
     } else {
       ChatStore.msgs.push({
+        color:"#ccc",
+         date: date,
+         favourite: false,
         from: UserStore.userrealname,
         message: this.refs.newText.value,
-        favourite: false,
-        date: date,
+        picture: UserStore.obj.picture,
         time: time,
         //   var d = new Date();
-        //   var n = d.getTime();
-        picture: UserStore.obj.picture
+        //   var n = d.getTime(); 
+        _id:"No id till now"+count      
       });
-
-      // var data1 = {
+      count++;
+      //  ChatStore.msgs.push({
+      //   from: UserStore.userrealname,
+      //   message: this.refs.newText.value,
       //   favourite: false,
-      //   msg: this.refs.newText.value,
+      //   date: date,
+      //   time: time,
+      //   //   var d = new Date();
+      //   //   var n = d.getTime();
       //   picture: UserStore.obj.picture
-      // };
-      // socket.emit("chat message", data1);
-      console.log("ChatStore.groupname");
-      console.log(ChatStore.groupname);
-      socket.on("chat messagey", function(msg) {
-        ChatStore.msgs.push(msg);
-
-        socket.emit("recieving msgs", ChatStore.groupId);
-        socket.on("remaining msgs", function(data) {
-          ///   console.log("da");
-          console.log(data[0].conversation);
-
-          ChatStore.msgs = data[0].conversation;
-        });
-
-        // ChatStore.msgs.push(msg);
-        // console.log(msg);
-        console.log("212321");
-      });
-      console.log("ChatStore.groupname");
-      console.log(ChatStore.groupname);
+      // });
+       console.log('Pushed');
+      ChatStore.totalmsgscount++;
+      ChatStore.totalnotescount++;
+      // console.log("ChatStore.groupname");
+      // console.log(ChatStore.groupname);
       socket.emit("send message", {
         msg: this.refs.newText.value,
         roomId: roomId,
         picture: UserStore.obj.picture,
         sendTo: ChatStore.groupname
       });
-      // socket.emit("emt", "abc");
-      //console.log("This is roomId " + roomId);
-      // socket.emit("sending", roomId);
+      socket.on("chat messagey", function(msg) {
+        console.log('Messagy');
+        console.log('length ',chatstore.msgs.length);
+        console.log(chatstore.msgs[chatstore.msgs.length - 1]);
+        if(chatstore.msgs[chatstore.msgs.length - 1].message != msg.message ||chatstore.msgs[chatstore.msgs.length - 1].from != msg.from || chatstore.msgs[chatstore.msgs.length - 1].date != msg.date)
+{
+        ChatStore.msgs.push(msg);
+}else{
+  console.log('Message is already Pushed');
+}
+        // ChatStore.msgs = docs[0].conversation;
+        // console.log("docs[0].conversation");
+        // console.log(docs[0].conversation);
+        // socket.on("remaining msgs", function(data) {
+        //   ChatStore.msgs = data[0].conversation;
+        // });
+      });
+      socket.emit("recieving msgs", ChatStore.groupId);
+      socket.on("remaining msgs", function(data) {
+        ChatStore.msgs = data[0].conversation;
+      });
+      socket.on("Message for my own", function(data) {
+        console.log('Pushing into my own')
+        ChatStore.msgs = data[0].conversation;
+      });
+      
+
       this.refs.newText.value = "";
-
-      // socket.on("new message", function(data) {
-      //   var d = new Date();
-      //   var n = d.getTime();
-      //   ChatStore.msgs.push(data);
-      //   console.log("kuch bhi");
-      // });
-
-      // socket.on("returnmsgs", function(data) {
-      //   ChatStore.msgs = data.msg;
-      // });
 
       var data = {
         user_id: UserStore.obj.user_id,
         _id: ChatStore.groupId,
-        count: ChatStore.msgs,
+        count: ChatStore.msgs.length + 1,
         participants: ChatStore.participants
 
         //ChatStore.readcount = Object.keys(data[0].conversation).length;
       };
       socket.emit("readcount send", data);
-      socket.on("emtt", function(data) {
-        console.log(data);
-      });
 
       // socket.emit("calculate conversations", result);
     }
   }
 
   render() {
+    var groupSelected;
+    if (ChatStore.groupname == " ") {
+      groupSelected = true;
+    } else false;
+
     //  console.log("This is data in store chat " + ChatStore.msgs);
     var users = ChatStore.msgs;
     const liststatus = UserStore.listy;
     // const numbers = [1, 2, 3, 4, 5];
+    // console.log("THis is users  " + users);
     // console.log("THis is users  " + users);
     const myScrollbar = {
       width: 400,
@@ -333,13 +398,25 @@ export default class Chat extends React.Component {
             <div className="panel">
               <ol className="chat" id="msgList">
                 {users.map(Users => {
+                  var left;
+                  if (Users.message == "HAS LEFT THE GROUP") {
+                    left = true;
+                  }
+                  var add;
+                  if (Users.message == "HAS BEEN ADDED TO THE GROUP") {
+                    add = true;
+                  }
+                  var remove;
+                  if (Users.message == "HAS BEEN REMOVED FROM THE GROUP") {
+                    remove = true;
+                  }
+
                   if (Users.favourite == false) {
                     Users.color = "#ccc";
                   } else Users.color = "#F44336";
                   if (Users.from == UserStore.userrealname) {
                     return (
                       <li className="self" key={Users._id}>
-                      <p>{Users._id}</p>
                         <div className="msg" key={Users._id}>
                           <IconMenu
                             key={Users._id}
@@ -354,16 +431,16 @@ export default class Chat extends React.Component {
                             }
                           >
                             <MenuItem
-                              primaryText="Delete"
-                              onTouchTap={this.handleDelete.bind(this, Users)}
-                            />
-                            <MenuItem
-                              primaryText={Users._id}
-                              onTouchTap={this.handleDelete.bind(this, Users)}
+                              primaryText="Add To Noteboard"
+                              onTouchTap={this.handleNote.bind(this, Users)}
                             />
                             <MenuItem
                               primaryText="Details"
                               onTouchTap={this.handleDetails.bind(this, Users)}
+                            />
+                            <MenuItem
+                              primaryText="Delete"
+                              onTouchTap={this.handleDelete.bind(this, Users)}
                             />
                           </IconMenu>
                           <p style={{ wordWrap: "break-word" }}>
@@ -380,42 +457,92 @@ export default class Chat extends React.Component {
                       </li>
                     );
                   } else {
-                    return (
-                      <li className="other" key={Users._id}>
-                        <Avatar src={Users.picture} />
-                        <div className="msg" key={Users._id}>
-                          <IconMenu
-                            style={{ display: "inline" }}
-                            iconButtonElement={
-                              <IconButton
-                                className="Morebutton"
-                                style={morestyle}
-                              >
-                                <ActionMore />
-                              </IconButton>
-                            }
-                          >
-                            <MenuItem
-                              primaryText="Details"
-                              onTouchTap={this.handleDetails.bind(this, Users)}
-                            />
-                          </IconMenu>
-                          <p>
-                            {Users.message}
-                          </p>
-                          <IconButton
-                            onTouchTap={this.handleStar.bind(this, Users)}
-                            style={starstyle}
-                          >
-                            <HomeIcon color={Users.color} />
-                          </IconButton>
+                    if (
+                      Users.message == "USER HAS LEFT THE GROUP" ||
+                      "HAS BEEN ADDED TO THE GROUP" ||
+                      "HAS BEEN REMOVED FROM THE GROUP"
+                    ) {
+                      if (Users.message == "USER HAS LEFT THE GROUP") {
+                        return (
+                          <div>
+                            <br />
 
-                          <div style={{ display: "inline" }}>
-                            <time>{Users.time}</time>&emsp;
-                            <sender>{Users.from}</sender>&emsp;{" "}
+                            {Users.from + " has left the group"}
+                            <br />
                           </div>
-                        </div>
-                      </li>
+                        );
+                      }
+                      if (Users.message == "HAS BEEN ADDED TO THE GROUP") {
+                        return (
+                          <div style={hasbeenadded}>
+                            <br />
+
+                            {Users.from + " has been added to the group"}
+                            <br />
+                          </div>
+                        );
+                      }
+                      if (Users.message == "HAS BEEN REMOVED FROM THE GROUP") {
+                        return (
+                          <div style={hasbeenremoved}>
+                            {Users.from + " has been removed from the group"}
+                            <br />
+                          </div>
+                        );
+                      }
+                    }
+                    return (
+                      <div>
+                        {left
+                          ? <h6 style={leftGroup}>
+                              <br />
+                              {Users.from} has left the group.
+                              <br />
+                            </h6>
+                          : <div>
+                              <li className="other" key={Users._id}>
+                                <Avatar src={Users.picture} />
+                                <div className="msg" key={Users._id}>
+                                  <IconMenu
+                                    style={{ display: "inline" }}
+                                    iconButtonElement={
+                                      <IconButton
+                                        className="Morebutton"
+                                        style={morestyle}
+                                      >
+                                        <ActionMore />
+                                      </IconButton>
+                                    }
+                                  >
+                                    <MenuItem
+                                      primaryText="Details"
+                                      onTouchTap={this.handleDetails.bind(
+                                        this,
+                                        Users
+                                      )}
+                                    />
+                                  </IconMenu>
+                                  <p>
+                                    {Users.message}
+                                  </p>
+                                  <IconButton
+                                    onTouchTap={this.handleStar.bind(
+                                      this,
+                                      Users
+                                    )}
+                                    style={starstyle}
+                                  >
+                                    <HomeIcon color={Users.color} />
+                                  </IconButton>
+
+                                  <div style={{ display: "inline" }}>
+                                    <time>{Users.time}</time>&emsp;
+                                    <sender>{Users.from}</sender>&emsp;{" "}
+                                  </div>
+                                </div>
+                              </li>
+                            </div>}
+                      </div>
                     );
                   }
                 })}
@@ -462,31 +589,33 @@ export default class Chat extends React.Component {
             </div>
             <br />
           </Dialog>
-          <div style={displayinline}>
-            <textarea
-              ref="newText"
-              maxLength="250"
-              style={chatinputbox}
-              placeholder="Please Enter Your message......."
-              className="form-control"
-            />
-            <IconButton
-              tooltip="Send"
-              tooltipPosition="top-center"
-              onClick={this.sendMsg}
-            >
-              <svg
-                fill="#FFFFFF"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                <path d="M0 0h24v24H0z" fill="none" />
-              </svg>
-            </IconButton>
-          </div>
+          {groupSelected
+            ? <div />
+            : <div style={displayinline}>
+                <textarea
+                  ref="newText"
+                  maxLength="250"
+                  style={chatinputbox}
+                  placeholder="Please Enter Your message......."
+                  className="form-control"
+                />
+                <IconButton
+                  tooltip="Send"
+                  tooltipPosition="top-center"
+                  onClick={this.sendMsg}
+                >
+                  <svg
+                    fill="#FFFFFF"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    <path d="M0 0h24v24H0z" fill="none" />
+                  </svg>
+                </IconButton>
+              </div>}
         </div>
       </div>
     );
