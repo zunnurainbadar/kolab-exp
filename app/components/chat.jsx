@@ -20,10 +20,10 @@ import ActionMore from "material-ui/svg-icons/navigation/expand-more";
 import SvgIcon from "material-ui/SvgIcon";
 import { blue500, red500, grey300 } from "material-ui/styles/colors";
 import Dialog from "material-ui/Dialog";
+import chatstore from "../store/ChatStore";
 
 import IconMenu from "material-ui/IconMenu";
 import MenuItem from "material-ui/MenuItem";
-import chatstore from '../store/ChatStore';
 // var socket;
 var today;
 var msgs;
@@ -110,13 +110,13 @@ const heightchat = {
   height: "100%"
   // backgroundColor: "#EDF8F5"
 };
- var count = 0;
+var count = 0;
+
 @observer
 export default class Chat extends React.Component {
   constructor(props) {
     super(props);
     this.sendMsg = this.sendMsg.bind(this);
-         
     // socket = io.connect();
     this.scrollToBottom = this.scrollToBottom.bind(this);
 
@@ -282,18 +282,18 @@ export default class Chat extends React.Component {
     if (this.refs.newText.value == "") {
     } else {
       ChatStore.msgs.push({
-        color:"#ccc",
-         date: date,
-         favourite: false,
+        color: "#ccc",
+        date: date,
+        favourite: false,
         from: UserStore.userrealname,
         message: this.refs.newText.value,
         picture: UserStore.obj.picture,
-        time: time,
+        time: time
         //   var d = new Date();
-        //   var n = d.getTime(); 
-        _id:"No id till now"+count      
+        //   var n = d.getTime();
+        // _id: "No id till now" + count
       });
-      count++;
+      // count++;
       //  ChatStore.msgs.push({
       //   from: UserStore.userrealname,
       //   message: this.refs.newText.value,
@@ -304,7 +304,7 @@ export default class Chat extends React.Component {
       //   //   var n = d.getTime();
       //   picture: UserStore.obj.picture
       // });
-       console.log('Pushed');
+      console.log("Pushed");
       ChatStore.totalmsgscount++;
       ChatStore.totalnotescount++;
       // console.log("ChatStore.groupname");
@@ -316,15 +316,18 @@ export default class Chat extends React.Component {
         sendTo: ChatStore.groupname
       });
       socket.on("chat messagey", function(msg) {
-        console.log('Messagy');
-        console.log('length ',chatstore.msgs.length);
-        console.log(chatstore.msgs[chatstore.msgs.length - 1]);
-        if(chatstore.msgs[chatstore.msgs.length - 1].message != msg.message ||chatstore.msgs[chatstore.msgs.length - 1].from != msg.from || chatstore.msgs[chatstore.msgs.length - 1].date != msg.date)
-{
-        ChatStore.msgs.push(msg);
-}else{
-  console.log('Message is already Pushed');
-}
+        // console.log("Messagy");
+        // console.log("length ", chatstore.msgs.length);
+        // console.log(chatstore.msgs[chatstore.msgs.length - 1]);
+        if (
+          chatstore.msgs[chatstore.msgs.length - 1].message != msg.message ||
+          chatstore.msgs[chatstore.msgs.length - 1].from != msg.from ||
+          chatstore.msgs[chatstore.msgs.length - 1].date != msg.date
+        ) {
+          ChatStore.msgs.push(msg);
+        } else {
+          // console.log("Message is already Pushed");
+        }
         // ChatStore.msgs = docs[0].conversation;
         // console.log("docs[0].conversation");
         // console.log(docs[0].conversation);
@@ -337,17 +340,16 @@ export default class Chat extends React.Component {
         ChatStore.msgs = data[0].conversation;
       });
       socket.on("Message for my own", function(data) {
-        console.log('Pushing into my own')
+        console.log("Pushing into my own");
         ChatStore.msgs = data[0].conversation;
       });
-      
 
       this.refs.newText.value = "";
 
       var data = {
         user_id: UserStore.obj.user_id,
         _id: ChatStore.groupId,
-        count: ChatStore.msgs.length + 1,
+        count: ChatStore.msgs.length,
         participants: ChatStore.participants
 
         //ChatStore.readcount = Object.keys(data[0].conversation).length;

@@ -323,7 +323,48 @@ export default class Chatbar extends React.Component {
           autoHideDuration={2500}
           onRequestClose={this.handleRequestSnackbarClose}
         />
-
+        <Dialog
+          modal={false}
+          overlay={false}
+          onRequestClose={this.handleClose}
+          contentStyle={customContentStyle}
+          open={this.state.open}
+        >
+          <h5>Users in the group:</h5>
+          <br />
+          {ChatStore.remainparticipants.map(Users => {
+            if (Users.user_id == ChatStore.admin_id) {
+              return (
+                <div key={Users.user_id}>
+                  <div className="" key={Users.user_id}>
+                    <ListItem
+                      key={Users.user_id}
+                      leftAvatar={<Avatar size={40} src={Users.picture} />}
+                      primaryText={Users.name}
+                      rightIcon={<ActionInfo />}
+                    />
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <div key={Users.user_id}>
+                  <div className="" key={Users.user_id}>
+                    <ListItem
+                      key={Users.user_id}
+                      leftAvatar={<Avatar size={40} src={Users.picture} />}
+                      primaryText={Users.name}
+                    />
+                  </div>
+                </div>
+              );
+            }
+          })}
+          <br />
+          <h5>
+            Created on {ChatStore.created_on}
+          </h5>
+        </Dialog>
         <Dialog
           modal={false}
           overlay={false}
@@ -359,7 +400,57 @@ export default class Chatbar extends React.Component {
             }
           })}
         </Dialog>
-      
+        <Dialog
+          modal={false}
+          overlay={false}
+          onRequestClose={this.handleRemoveAdminClose}
+          contentStyle={customContentWidthStyle}
+          open={this.state.openRemoveAdmin}
+        >
+          <h5>Remove User from the group</h5>
+
+          <br />
+          {ChatStore.remainparticipants.map(Users => {
+            if (Users.user_id == ChatStore.admin_id) {
+              return (
+                <div key={Users.user_id}>
+                  <div className="" key={Users.user_id}>
+                    <ListItem
+                      key={Users.user_id}
+                      leftAvatar={<Avatar size={40} src={Users.picture} />}
+                      primaryText={Users.name}
+                      disabled={true}
+                      rightIcon={<ActionInfo />}
+                    />
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <div key={Users.user_id}>
+                  <div className="" key={Users.user_id}>
+                    <ListItem
+                      disabled={true}
+                      key={Users.user_id}
+                      leftAvatar={<Avatar size={40} src={Users.picture} />}
+                      primaryText={Users.name}
+                      rightIconButton={
+                        <RaisedButton
+                          label={"Remove From Group"}
+                          secondary={true}
+                          key={Users.user_id}
+                          onTouchTap={() => this._handleRemoveClick(Users)}
+                          style={style}
+                        />
+                      }
+                    />
+                  </div>
+                </div>
+              );
+            }
+          })}
+          <br />
+        </Dialog>
         <Dialog
           title="Add User"
           actions={actionsAdd}
@@ -367,7 +458,7 @@ export default class Chatbar extends React.Component {
           open={this.state.openAddUser}
           onRequestClose={this.handleAddUserClose}
         >
-          Are you sure you want to Remove the user?
+          Are you sure you want to Add the user?
         </Dialog>{" "}
         <Dialog
           title="Remove User"
@@ -430,99 +521,3 @@ export default class Chatbar extends React.Component {
     );
   }
 }
-
-        // <Dialog
-        //   modal={false}
-        //   overlay={false}
-        //   onRequestClose={this.handleClose}
-        //   contentStyle={customContentStyle}
-        //   open={this.state.open}
-        // >
-        //   <h5>Users in the group:</h5>
-        //   <br />
-        //   {ChatStore.remainparticipants.map(Users => {
-        //     if (Users.user_id == ChatStore.admin_id) {
-        //       return (
-        //         <div key={Users.user_id}>
-        //           <div className="" key={Users.user_id}>
-        //             <ListItem
-        //               key={Users.user_id}
-        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
-        //               primaryText={Users.name}
-        //               rightIcon={<ActionInfo />}
-        //             />
-        //           </div>
-        //         </div>
-        //       );
-        //     } else {
-        //       return (
-        //         <div key={Users.user_id}>
-        //           <div className="" key={Users.user_id}>
-        //             <ListItem
-        //               key={Users.user_id}
-        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
-        //               primaryText={Users.name}
-        //             />
-        //           </div>
-        //         </div>
-        //       );
-        //     }
-        //   })}
-        //   <br />
-        //   <h5>
-        //     Created on {ChatStore.created_on}
-        //   </h5>
-        // </Dialog>
-
-
-        //   <Dialog
-        //   modal={false}
-        //   overlay={false}
-        //   onRequestClose={this.handleRemoveAdminClose}
-        //   contentStyle={customContentWidthStyle}
-        //   open={this.state.openRemoveAdmin}
-        // >
-        //   <h5>Remove User from the group</h5>
-
-        //   <br />
-        //   {ChatStore.remainparticipants.map(Users => {
-        //     if (Users.user_id == ChatStore.admin_id) {
-        //       return (
-        //         <div key={Users.user_id}>
-        //           <div className="" key={Users.user_id}>
-        //             <ListItem
-        //               key={Users.user_id}
-        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
-        //               primaryText={Users.name}
-        //               disabled={true}
-        //               rightIcon={<ActionInfo />}
-        //             />
-        //           </div>
-        //         </div>
-        //       );
-        //     } else {
-        //       return (
-        //         <div key={Users.user_id}>
-        //           <div className="" key={Users.user_id}>
-        //             <ListItem
-        //               disabled={true}
-        //               key={Users.user_id}
-        //               leftAvatar={<Avatar size={40} src={Users.picture} />}
-        //               primaryText={Users.name}
-        //               rightIconButton={
-        //                 <RaisedButton
-        //                   label={"Remove From Group"}
-        //                   secondary={true}
-        //                   key={Users.user_id}
-        //                   onTouchTap={() => this._handleRemoveClick(Users)}
-        //                   style={style}
-        //                 />
-        //               }
-        //             />
-        //           </div>
-        //         </div>
-        //       );
-        //     }
-        //   })}
-        //   <br />
-        // </Dialog>
